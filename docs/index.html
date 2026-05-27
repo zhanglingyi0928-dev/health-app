@@ -808,12 +808,12 @@ function saveData(d) { localStorage.setItem(STORAGE_KEY, JSON.stringify(d)); }
 function getDefaultData() {
   return {
     user: {
-      name: '小林', startWeight: 75.4, currentWeight: 75.4, goalWeight: 65.0,
+      name: '小林', startWeight: 60.0, currentWeight: 60.0, goalWeight: 65.0,
       dailyCalGoal: 1600, startDate: '2026-05-13',
       height: 165, age: 28, activityLevel: '中等',
       goalType: '减脂', goalDate: '9月底',
       aiStyle: '鼓励型', pushTime: '22:30',
-      restrictions: { tags: ['低脂肪', '低碘', '保护胃', '桥本甲状腺炎'], prohibitions: '海带、紫菜、辛辣、油炸、咖啡、浓茶' },
+      restrictions: { tags: [], prohibitions: '' },
       specialStatus: '', allergies: '无',
       notifications: { dailySummary: true, waterRemind: true, exerciseRemind: false }
     },
