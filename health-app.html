@@ -888,18 +888,42 @@ function refreshDashboard() {
   document.getElementById('greeting-text').textContent = greetingMsgs[Math.floor(Math.random() * greetingMsgs.length)];
   document.getElementById('streak-badge').textContent = `🔥 ${appData.streak}天`;
 
-  // Weight chart (fake 14-day)
+  // Weight chart (14-day, based on actual weightEntries when available)
   const chart = document.getElementById('weight-chart');
   chart.innerHTML = '';
+
+  const items = [];
   for (let i = 13; i >= 0; i--) {
     const d = new Date(now);
     d.setDate(d.getDate() - i);
     const key = dateStr(d);
     const w = appData.logs[key]?.weightEntries?.[0]?.value;
-    const h = w ? Math.round(20 + (appData.user.startWeight - w) / (appData.user.startWeight - appData.user.goalWeight) * 40) : 20 + Math.random() * 20;
-    const isToday = i === 0;
-    const label = i === 0 ? '今' : `${d.getDate()}`;
-    chart.innerHTML += `<div class="bar-group"><div class="bar ${isToday?'today':''}" style="height:${Math.max(10,h)}px"></div><div class="bar-label">${label}</div></div>`;
+    items.push({ key, w, d, isToday: i === 0 });
+  }
+
+  const known = items
+    .map(x => x.w)
+    .filter(v => typeof v === 'number' && !isNaN(v));
+
+  let minW = known.length ? Math.min(...known) : (appData.user.startWeight || appData.user.currentWeight || 60);
+  let maxW = known.length ? Math.max(...known) : (appData.user.goalWeight || minW);
+  if (minW === maxW) maxW = minW + 0.001;
+
+  let lastKnown = known.length ? known[known.length - 1] : null;
+
+  for (const it of items) {
+    let w = it.w;
+    if (!(typeof w === 'number' && !isNaN(w))) {
+      // 缺失时用最近一次有效值，避免随机导致趋势“跳飞”
+      w = typeof lastKnown === 'number' ? lastKnown : (appData.user.currentWeight || minW);
+    } else {
+      lastKnown = w;
+    }
+
+    const ratio = (w - minW) / (maxW - minW); // 0~1
+    const h = Math.round(20 + ratio * 40);
+    const label = it.isToday ? '今' : `${it.d.getDate()}`;
+    chart.innerHTML += `<div class="bar-group"><div class="bar ${it.isToday?'today':''}" style="height:${Math.max(10,h)}px"></div><div class="bar-label">${label}</div></div>`;
   }
 
   // Calories
