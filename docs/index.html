@@ -1,0 +1,2292 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>健康打卡</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  :root {
+    --green-100: #dcf3e6; --green-200: #b8e6cc; --green-400: #6dbe96;
+    --green-500: #45a873; --green-600: #2e8a59; --green-700: #1e6b42;
+    --mint: #e8f5ee; --cream: #fafdf8; --text-dark: #1a2e22;
+    --text-mid: #3d5447; --text-muted: #7a9585; --text-light: #a8c0b0;
+    --card-bg: #ffffff; --border: #e2ede7;
+  }
+  body { font-family: 'DM Sans', sans-serif; background: #f2f7f4; display: flex; justify-content: center; align-items: flex-start; min-height: 100vh; padding: 24px 16px; }
+  .phone { width: 390px; background: var(--cream); border-radius: 48px; overflow: hidden; box-shadow: 0 32px 80px rgba(30,107,66,0.15), 0 8px 24px rgba(0,0,0,0.08); position: relative; height: 844px; display: flex; flex-direction: column; }
+
+  /* Pages */
+  .page { display: none; flex-direction: column; flex: 1; overflow: hidden; }
+  .page.active { display: flex; }
+  .status-bar { display: flex; justify-content: space-between; padding: 14px 28px 0; font-size: 12px; font-weight: 500; color: var(--text-mid); flex-shrink: 0; }
+  .scroll-content { flex: 1; overflow-y: auto; padding: 0 16px 16px; }
+
+  /* Bottom Nav */
+  .bottom-nav { background: rgba(250,253,248,0.97); backdrop-filter: blur(12px); border-top: 1px solid var(--border); display: flex; justify-content: space-around; padding: 10px 0 20px; flex-shrink: 0; position: relative; z-index: 5; }
+  .nav-item { display: flex; flex-direction: column; align-items: center; gap: 4px; cursor: pointer; padding: 4px 20px; }
+  .nav-icon { font-size: 20px; color: var(--text-light); transition: color 0.2s; }
+  .nav-item.active .nav-icon { color: var(--green-600); }
+  .nav-label { font-size: 10px; color: var(--text-light); font-weight: 500; }
+  .nav-item.active .nav-label { color: var(--green-600); }
+  .nav-dot { width: 4px; height: 4px; border-radius: 50%; background: var(--green-500); opacity: 0; }
+  .nav-item.active .nav-dot { opacity: 1; }
+
+  /* FAB */
+  .fab { position: absolute; bottom: 72px; right: 20px; width: 52px; height: 52px; background: var(--green-600); border-radius: 50%; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 16px rgba(46,138,89,0.4); cursor: pointer; z-index: 10; transition: transform 0.2s; }
+  .fab:active { transform: scale(0.95); }
+  .fab svg { width: 22px; height: 22px; color: white; }
+
+  /* Shared */
+  .page-header { padding: 12px 24px 16px; display: flex; justify-content: space-between; align-items: center; flex-shrink: 0; }
+  .page-header h1 { font-size: 22px; font-weight: 600; color: var(--text-dark); letter-spacing: -0.5px; }
+  .section-label { font-size: 11px; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.8px; margin: 12px 4px 8px; }
+
+  /* Dashboard */
+  .header-left h1 { font-size: 22px; font-weight: 600; color: var(--text-dark); letter-spacing: -0.5px; }
+  .header-left p { font-size: 13px; color: var(--text-muted); margin-top: 2px; }
+  .avatar { width: 40px; height: 40px; background: var(--green-500); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 15px; font-weight: 600; color: white; cursor: pointer; }
+  .greeting-band { background: var(--mint); border-radius: 14px; padding: 12px 16px; margin-bottom: 12px; display: flex; align-items: center; gap: 10px; border: 1px solid var(--green-100); }
+  .greeting-text { font-size: 13px; color: var(--text-mid); line-height: 1.5; }
+  .streak-badge { background: var(--green-500); color: white; font-size: 11px; font-weight: 600; padding: 4px 10px; border-radius: 20px; white-space: nowrap; flex-shrink: 0; }
+  .weight-card { background: var(--green-600); border-radius: 24px; padding: 20px 22px; margin-bottom: 12px; position: relative; overflow: hidden; }
+  .weight-card::before { content:''; position:absolute; top:-30px; right:-30px; width:140px; height:140px; background:rgba(255,255,255,0.06); border-radius:50%; }
+  .weight-label { font-size: 12px; color: rgba(255,255,255,0.65); letter-spacing: 0.5px; text-transform: uppercase; font-weight: 500; margin-bottom: 6px; }
+  .weight-main { display: flex; align-items: baseline; gap: 6px; margin-bottom: 4px; }
+  .weight-value { font-size: 48px; font-weight: 300; color: white; letter-spacing: -2px; font-family: 'DM Mono', monospace; }
+  .weight-unit { font-size: 16px; color: rgba(255,255,255,0.7); }
+  .weight-change { display:inline-flex; align-items:center; gap:4px; background:rgba(255,255,255,0.15); border-radius:20px; padding:4px 10px; font-size:12px; color:white; font-weight:500; margin-bottom:16px; }
+  .weight-goal { display:flex; justify-content:space-between; margin-bottom:8px; }
+  .weight-goal span { font-size:12px; color:rgba(255,255,255,0.65); }
+  .weight-goal strong { font-size:12px; color:white; }
+  .progress-track { height:4px; background:rgba(255,255,255,0.2); border-radius:2px; overflow:hidden; }
+  .progress-fill { height:100%; background:rgba(255,255,255,0.85); border-radius:2px; width:62%; }
+  .trend-section { background:var(--card-bg); border-radius:20px; padding:16px 18px; margin-bottom:12px; border:1px solid var(--border); }
+  .section-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:14px; }
+  .section-title { font-size:14px; font-weight:600; color:var(--text-dark); }
+  .trend-tabs { display:flex; gap:4px; background:var(--mint); border-radius:20px; padding:3px; }
+  .trend-tab { font-size:11px; font-weight:500; color:var(--text-muted); padding:4px 10px; border-radius:16px; cursor:pointer; }
+  .trend-tab.active { background:white; color:var(--green-600); box-shadow:0 1px 4px rgba(0,0,0,0.08); }
+  .mini-chart { height:72px; display:flex; align-items:flex-end; gap:6px; padding:0 2px; }
+  .bar-group { flex:1; display:flex; flex-direction:column; align-items:center; gap:4px; }
+  .bar { width:100%; background:var(--green-200); border-radius:4px 4px 0 0; }
+  .bar.today { background:var(--green-500); }
+  .bar-label { font-size:10px; color:var(--text-light); font-family:'DM Mono',monospace; }
+  .stats-grid { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:12px; }
+  .stat-card { background:var(--card-bg); border-radius:20px; padding:16px; border:1px solid var(--border); }
+  .stat-card.full-width { grid-column:1/-1; }
+  .stat-icon { width:32px; height:32px; border-radius:10px; display:flex; align-items:center; justify-content:center; font-size:16px; margin-bottom:10px; }
+  .stat-icon.green { background:var(--green-100); }
+  .stat-icon.blue { background:#e8f4ff; }
+  .stat-icon.orange { background:#fff3e8; }
+  .stat-icon.purple { background:#f0ecff; }
+  .stat-name { font-size:11px; color:var(--text-muted); font-weight:500; margin-bottom:4px; text-transform:uppercase; letter-spacing:0.4px; }
+  .stat-value { font-size:22px; font-weight:600; color:var(--text-dark); letter-spacing:-0.5px; font-family:'DM Mono',monospace; line-height:1; margin-bottom:2px; }
+  .stat-sub { font-size:11px; color:var(--text-muted); }
+  .stat-sub span { color:var(--green-500); font-weight:500; }
+  .calorie-card { display:flex; align-items:center; gap:16px; }
+  .ring-wrap { position:relative; width:72px; height:72px; flex-shrink:0; }
+  .ring-wrap svg { transform:rotate(-90deg); }
+  .ring-center { position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); text-align:center; }
+  .ring-pct { font-size:14px; font-weight:600; color:var(--text-dark); font-family:'DM Mono',monospace; line-height:1; }
+  .ring-pct-sub { font-size:9px; color:var(--text-muted); }
+  .calorie-details { flex:1; }
+  .calorie-row { display:flex; justify-content:space-between; align-items:center; margin-bottom:6px; }
+  .calorie-row:last-child { margin-bottom:0; }
+  .cal-dot { width:6px; height:6px; border-radius:50%; display:inline-block; margin-right:6px; }
+  .cal-label { font-size:12px; color:var(--text-mid); display:flex; align-items:center; }
+  .cal-val { font-size:12px; font-weight:600; color:var(--text-dark); font-family:'DM Mono',monospace; }
+  .water-progress { margin-top:8px; display:flex; gap:4px; }
+  .water-drop { flex:1; height:6px; border-radius:3px; background:var(--border); }
+  .water-drop.filled { background:#5bb8e8; }
+
+  /* Records */
+  .date-switcher { display:flex; align-items:center; background:var(--card-bg); border:1px solid var(--border); border-radius:20px; padding:6px 4px; margin:0 16px 12px; }
+  .date-arrow { width:32px; height:32px; display:flex; align-items:center; justify-content:center; color:var(--text-muted); cursor:pointer; border-radius:50%; font-size:14px; }
+  .date-center { flex:1; text-align:center; }
+  .date-main { font-size:14px; font-weight:600; color:var(--text-dark); }
+  .date-sub { font-size:11px; color:var(--text-muted); }
+  .date-today-badge { display:inline-block; background:var(--green-500); color:white; font-size:10px; font-weight:600; padding:2px 8px; border-radius:10px; margin-left:6px; }
+  .category-card { background:var(--card-bg); border-radius:20px; border:1px solid var(--border); margin-bottom:10px; overflow:hidden; }
+  .category-header { display:flex; align-items:center; justify-content:space-between; padding:14px 16px 10px; cursor:pointer; }
+  .category-left { display:flex; align-items:center; gap:10px; }
+  .category-icon { width:36px; height:36px; border-radius:12px; display:flex; align-items:center; justify-content:center; font-size:18px; }
+  .cat-green { background:var(--green-100); }
+  .cat-blue { background:#e8f4ff; }
+  .cat-orange { background:#fff3e8; }
+  .cat-purple { background:#f0ecff; }
+  .card-date-badge { display:inline-block; background:var(--green-600); color:#fff; font-size:10px; font-weight:600; padding:1px 6px; border-radius:6px; margin-right:4px; vertical-align:middle; }
+  .category-info h3 { font-size:14px; font-weight:600; color:var(--text-dark); }
+  /* Settings new styles */
+  .settings-group { background:var(--card-bg); border:1px solid var(--border); border-radius:20px; overflow:hidden; margin-bottom:12px; }
+  .settings-row { display:flex; align-items:center; padding:14px 16px; gap:12px; cursor:pointer; position:relative; transition:background 0.15s; }
+  .settings-row:hover { background:var(--mint); }
+  .settings-row:active { background:var(--green-100); }
+  .settings-row + .settings-row::before { content:''; position:absolute; top:0; left:52px; right:16px; height:1px; background:var(--border); }
+  .row-icon { width:34px; height:34px; border-radius:10px; display:flex; align-items:center; justify-content:center; font-size:17px; flex-shrink:0; }
+  .ic-green { background:var(--green-100); }
+  .ic-blue { background:#e8f4ff; }
+  .ic-orange { background:#fff3e8; }
+  .ic-purple { background:#f0ecff; }
+  .ic-red { background:#fff0f0; }
+  .ic-gray { background:#f2f2f2; }
+  .row-content { flex:1; }
+  .row-title { font-size:14px; font-weight:500; color:var(--text-dark); }
+  .row-subtitle { font-size:12px; color:var(--text-muted); margin-top:2px; }
+  .row-value { font-size:13px; color:var(--text-muted); font-family:'DM Mono',monospace; }
+  .row-arrow { color:var(--text-light); font-size:14px; }
+
+  /* Profile card in settings */
+  .profile-card { background:var(--green-600); border-radius:20px; padding:18px 20px; margin-bottom:16px; display:flex; align-items:center; gap:14px; }
+  .profile-avatar { width:56px; height:56px; border-radius:50%; background:rgba(255,255,255,0.2); display:flex; align-items:center; justify-content:center; font-size:22px; font-weight:600; color:white; flex-shrink:0; border:2px solid rgba(255,255,255,0.3); }
+  .profile-info h3 { font-size:17px; font-weight:600; color:white; }
+  .profile-info p { font-size:12px; color:rgba(255,255,255,0.65); margin-top:3px; }
+
+  /* Toggle switch */
+  .toggle { width:42px; height:24px; border-radius:12px; background:var(--green-500); position:relative; cursor:pointer; flex-shrink:0; transition:background 0.2s; }
+  .toggle.off { background:var(--border); }
+  .toggle-thumb { width:20px; height:20px; border-radius:50%; background:white; position:absolute; top:2px; right:2px; box-shadow:0 1px 4px rgba(0,0,0,0.15); transition:right 0.2s; }
+  .toggle.off .toggle-thumb { right:20px; }
+
+  /* Goal / AI style chips */
+  .goal-options, .style-options { padding:0 16px 14px; display:flex; gap:8px; }
+  .goal-chip, .style-chip { flex:1; border:1.5px solid var(--border); border-radius:12px; padding:8px 6px; text-align:center; cursor:pointer; transition:all 0.15s; }
+  .goal-chip.active, .style-chip.active { border-color:var(--green-500); background:var(--mint); }
+  .chip-emoji { font-size:18px; }
+  .chip-label { font-size:11px; font-weight:500; color:var(--text-mid); margin-top:4px; display:block; }
+  .goal-chip.active .chip-label, .style-chip.active .chip-label { color:var(--green-600); }
+
+  /* Danger row */
+  .danger-row .row-title { color:#d04040; }
+  .danger-row .row-icon { background:#fff0f0; }
+
+  /* Generic edit popup */
+  .edit-popup-overlay { position:absolute; inset:0; background:rgba(0,0,0,0.4); z-index:200; display:none; align-items:flex-end; justify-content:center; }
+  .edit-popup-overlay.show { display:flex; }
+  .edit-popup-sheet { background:var(--cream); border-radius:20px 20px 0 0; width:100%; max-width:420px; padding:20px 20px calc(20px + env(safe-area-inset-bottom)) 20px; box-shadow:0 -4px 24px rgba(0,0,0,0.15); animation:slideUp 0.25s ease-out; }
+  @keyframes slideUp { from { transform:translateY(100%); } to { transform:translateY(0); } }
+  .edit-popup-title { font-size:16px; font-weight:600; text-align:center; margin-bottom:16px; }
+  .edit-popup-input { width:100%; padding:14px; border:1.5px solid var(--border); border-radius:14px; font-size:18px; font-family:'DM Mono',monospace; color:var(--text-dark); text-align:center; background:var(--card-bg); }
+  .edit-popup-input:focus { outline:none; border-color:var(--green-500); }
+  .edit-popup-unit { font-size:14px; color:var(--text-muted); margin-left:6px; }
+  .edit-popup-actions { display:flex; gap:10px; margin-top:16px; }
+  .edit-popup-actions button { flex:1; padding:12px; border-radius:12px; font-size:14px; font-weight:600; border:none; cursor:pointer; }
+  .edit-popup-cancel { background:var(--border); color:var(--text-muted); }
+  .edit-popup-save { background:var(--green-600); color:white; }
+
+  /* Select popup */
+  .select-list { display:flex; flex-direction:column; }
+  .select-item { padding:14px 16px; text-align:center; font-size:15px; color:var(--text-dark); cursor:pointer; border-radius:12px; transition:background 0.15s; }
+  .select-item:hover { background:var(--mint); }
+  .select-item.sel { color:var(--green-600); font-weight:600; background:var(--green-100); }
+  .select-item + .select-item { border-top:1px solid var(--border); }
+  .settings-stats-bar { display:flex; gap:8px; margin-bottom:16px; }
+  .settings-stats-bar .stat-mini { flex:1; background:var(--mint); border-radius:12px; padding:10px 8px; text-align:center; }
+  .stat-mini-val { font-size:16px; font-weight:600; color:var(--text-dark); font-family:'DM Mono',monospace; }
+  .stat-mini-lbl { font-size:10px; color:var(--text-muted); margin-top:3px; }
+  .edit-input { border:1.5px solid var(--border); border-radius:8px; padding:4px 10px; font-size:13px; font-family:'DM Mono',monospace; color:var(--text-dark); background:var(--card-bg); min-width:80px; text-align:right; }
+  .edit-input:focus { outline:none; border-color:var(--green-500); }
+  .edit-input[type="date"] { text-align:right; }
+  /* Restrictions popup */
+  .restr-popup-overlay { position:absolute; inset:0; background:rgba(0,0,0,0.4); z-index:200; display:none; align-items:flex-end; justify-content:center; }
+  .restr-popup-overlay.show { display:flex; }
+  .restr-popup-sheet { background:var(--cream); border-radius:20px 20px 0 0; width:100%; max-width:420px; padding:20px 20px calc(20px + env(safe-area-inset-bottom)) 20px; box-shadow:0 -4px 24px rgba(0,0,0,0.15); }
+  .restr-popup-title { font-size:16px; font-weight:600; text-align:center; margin-bottom:16px; }
+  .restr-tag-grid { display:flex; gap:8px; flex-wrap:wrap; margin-bottom:14px; }
+  .restr-tag { border:1.5px solid var(--border); border-radius:20px; padding:6px 14px; font-size:13px; font-weight:500; cursor:pointer; transition:all 0.15s; color:var(--text-mid); background:var(--card-bg); }
+  .restr-tag.sel { border-color:var(--green-500); background:var(--green-100); color:var(--green-700); }
+  .restr-popup-actions { display:flex; gap:10px; margin-top:16px; }
+  .restr-popup-actions button { flex:1; padding:12px; border-radius:12px; font-size:14px; font-weight:600; border:none; cursor:pointer; }
+  .restr-popup-cancel { background:var(--border); color:var(--text-muted); }
+  .restr-popup-save { background:var(--green-600); color:white; }
+  .category-info p { font-size:11px; color:var(--text-muted); margin-top:1px; }
+  .category-right { display:flex; align-items:center; gap:8px; }
+  .category-summary { font-size:13px; font-weight:600; color:var(--green-600); font-family:'DM Mono',monospace; }
+  .chevron { color:var(--text-light); font-size:14px; transition:transform 0.2s; }
+  .chevron.open { transform:rotate(180deg); }
+  .record-list { border-top:1px solid var(--border); padding:8px 0 4px; }
+  .record-item { display:flex; align-items:center; padding:10px 16px; gap:12px; position:relative; }
+  .record-item+.record-item::before { content:''; position:absolute; top:0; left:44px; right:16px; height:1px; background:var(--border); opacity:0.6; }
+  .record-time { font-size:11px; color:var(--text-light); font-family:'DM Mono',monospace; width:36px; flex-shrink:0; }
+  .record-dot { width:8px; height:8px; border-radius:50%; background:var(--green-200); flex-shrink:0; }
+  .record-dot.active { background:var(--green-500); }
+  .record-content { flex:1; }
+  .record-title { font-size:13px; font-weight:500; color:var(--text-dark); }
+  .record-detail { font-size:11px; color:var(--text-muted); margin-top:2px; }
+  .exercise-layout { display:flex; align-items:center; width:100%; }
+  .exercise-main { flex:1; }
+  .exercise-duration { font-size:13px; font-weight:600; color:var(--text-dark); flex-shrink:0; }
+  .record-cal { font-size:12px; font-weight:600; color:var(--text-mid); font-family:'DM Mono',monospace; flex-shrink:0; }
+  .record-edit { color:var(--text-light); font-size:14px; cursor:pointer; padding:4px; }
+  .add-entry { display:flex; align-items:center; gap:8px; padding:10px 16px 14px; color:var(--green-500); font-size:13px; font-weight:500; cursor:pointer; border-top:1px dashed var(--green-100); margin-top:4px; }
+  .source-tag { display:inline-flex; align-items:center; gap:3px; background:var(--mint); color:var(--green-600); font-size:10px; font-weight:500; padding:2px 6px; border-radius:6px; margin-left:6px; }
+  .macros-bar { display:flex; height:4px; border-radius:2px; overflow:hidden; margin-top:6px; gap:1px; }
+  .macro-seg { border-radius:1px; }
+
+  /* Achievements */
+  .insight-card { border-radius:20px; padding:16px; margin-bottom:10px; background:var(--card-bg); border:1px solid var(--border); border-left:3px solid var(--green-400); }
+  .insight-card.warn { border-left-color:#f0a050; }
+  .insight-card.tip { border-left-color:#5bb8e8; }
+  .insight-top { display:flex; align-items:flex-start; gap:10px; margin-bottom:8px; }
+  .insight-emoji { font-size:20px; line-height:1; flex-shrink:0; margin-top:1px; }
+  .insight-title { font-size:14px; font-weight:600; color:var(--text-dark); line-height:1.4; }
+  .insight-body { font-size:13px; color:var(--text-mid); line-height:1.6; padding-left:30px; }
+  .insight-tag { display:inline-block; font-size:10px; font-weight:600; padding:2px 8px; border-radius:8px; margin-top:8px; margin-left:30px; }
+  .tag-good { background:var(--mint); color:var(--green-600); }
+  .tag-warn { background:#fff3e8; color:#b06020; }
+  .tag-tip { background:#e8f4ff; color:#2060a0; }
+  .weekly-strip { background:var(--green-600); border-radius:20px; padding:16px 18px; margin-bottom:10px; color:white; }
+  .weekly-strip h3 { font-size:13px; font-weight:600; opacity:0.75; margin-bottom:10px; text-transform:uppercase; letter-spacing:0.5px; }
+  .weekly-stats { display:flex; justify-content:space-between; }
+  .weekly-stat { text-align:center; }
+  .weekly-stat .val { font-size:22px; font-weight:600; font-family:'DM Mono',monospace; letter-spacing:-0.5px; line-height:1; }
+  .weekly-stat .lbl { font-size:11px; opacity:0.65; margin-top:4px; }
+  .weekly-divider { width:1px; background:rgba(255,255,255,0.2); margin:4px 0; }
+  .heatmap-card { background:var(--card-bg); border:1px solid var(--border); border-radius:20px; padding:16px 18px; margin-bottom:10px; }
+  .heatmap-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; }
+  .heatmap-title { font-size:14px; font-weight:600; color:var(--text-dark); }
+  .heatmap-legend { display:flex; align-items:center; gap:4px; font-size:10px; color:var(--text-light); }
+  .legend-dot { width:8px; height:8px; border-radius:2px; }
+  .heatmap-grid { display:grid; grid-template-columns:repeat(7,1fr); gap:4px; }
+  .heatmap-day-label { font-size:9px; color:var(--text-light); text-align:center; padding-bottom:2px; }
+  .heatmap-cell { aspect-ratio:1; border-radius:4px; }
+  .hm-0 { background:var(--border); }
+  .hm-1 { background:var(--green-100); }
+  .hm-2 { background:var(--green-200); }
+  .hm-3 { background:var(--green-400); }
+  .hm-4 { background:var(--green-500); }
+  .hm-today { outline:2px solid var(--green-600); outline-offset:1px; }
+  .streak-card { background:var(--card-bg); border:1px solid var(--border); border-radius:20px; padding:16px 18px; margin-bottom:10px; display:flex; align-items:center; gap:14px; }
+  .streak-flame { font-size:40px; line-height:1; }
+  .streak-info h3 { font-size:28px; font-weight:600; color:var(--text-dark); font-family:'DM Mono',monospace; letter-spacing:-1px; line-height:1; }
+  .streak-info p { font-size:13px; color:var(--text-muted); margin-top:3px; }
+  .streak-info small { font-size:11px; color:var(--text-light); display:block; margin-top:2px; }
+  .streak-best { margin-left:auto; text-align:center; background:var(--mint); border-radius:12px; padding:8px 12px; }
+  .streak-best .best-val { font-size:18px; font-weight:600; color:var(--green-600); font-family:'DM Mono',monospace; }
+  .streak-best .best-lbl { font-size:10px; color:var(--text-muted); margin-top:2px; }
+  .badges-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:8px; margin-bottom:10px; }
+  .badge-item { background:var(--card-bg); border:1px solid var(--border); border-radius:16px; padding:12px 8px; display:flex; flex-direction:column; align-items:center; gap:6px; cursor:pointer; }
+  .badge-item.locked { opacity:0.4; filter:grayscale(1); }
+  .badge-emoji { font-size:28px; line-height:1; }
+  .badge-name { font-size:10px; font-weight:500; color:var(--green-600); text-align:center; line-height:1.3; }
+  .badge-item.locked .badge-name { color:var(--text-mid); }
+  .challenge-card { background:var(--card-bg); border:1px solid var(--border); border-radius:20px; padding:14px 16px; margin-bottom:8px; display:flex; align-items:center; gap:12px; }
+  .challenge-icon { width:40px; height:40px; border-radius:14px; background:var(--mint); display:flex; align-items:center; justify-content:center; font-size:20px; flex-shrink:0; }
+  .challenge-info { flex:1; }
+  .challenge-name { font-size:13px; font-weight:600; color:var(--text-dark); }
+  .challenge-desc { font-size:11px; color:var(--text-muted); margin-top:2px; }
+  .challenge-progress-wrap { margin-top:6px; display:flex; align-items:center; gap:6px; }
+  .challenge-track { flex:1; height:4px; background:var(--border); border-radius:2px; overflow:hidden; }
+  .challenge-fill { height:100%; background:var(--green-500); border-radius:2px; }
+  .challenge-pct { font-size:11px; font-weight:600; color:var(--green-600); font-family:'DM Mono',monospace; min-width:28px; text-align:right; }
+
+  /* Chat */
+  .chat-header { padding:10px 20px 12px; display:flex; align-items:center; gap:12px; border-bottom:1px solid var(--border); flex-shrink:0; background:var(--cream); }
+  .chat-header-right { margin-left:auto; display:flex; gap:8px; }
+  .header-btn-chat { width:32px; height:32px; border-radius:50%; background:var(--mint); display:flex; align-items:center; justify-content:center; font-size:13px; cursor:pointer; border:none; transition:background 0.15s; }
+  .header-btn-chat:hover { background:var(--green-200); }
+  .close-btn { width:32px; height:32px; border-radius:50%; background:var(--mint); display:flex; align-items:center; justify-content:center; color:var(--text-mid); font-size:16px; cursor:pointer; }
+  .ai-avatar { width:38px; height:38px; border-radius:50%; background:var(--green-600); display:flex; align-items:center; justify-content:center; font-size:18px; flex-shrink:0; }
+  .ai-info h3 { font-size:15px; font-weight:600; color:var(--text-dark); }
+  .ai-info p { font-size:11px; color:var(--green-500); margin-top:1px; display:flex; align-items:center; gap:4px; }
+  .online-dot { width:6px; height:6px; border-radius:50%; background:var(--green-500); display:inline-block; }
+  .messages { flex:1; overflow-y:auto; padding:16px 16px 8px; display:flex; flex-direction:column; gap:12px; }
+  .messages:empty::before { content:'今天感觉怎么样？\A告诉我吃了什么、运动了多久~'; white-space:pre-wrap; color:var(--text-light); font-size:14px; line-height:1.7; text-align:center; padding:40px 20px; display:block; }
+  .date-divider { text-align:center; font-size:11px; color:var(--text-light); font-weight:500; display:flex; align-items:center; gap:8px; }
+  .date-divider::before,.date-divider::after { content:''; flex:1; height:1px; background:var(--border); }
+  .msg-ai { display:flex; align-items:flex-end; gap:8px; }
+  .msg-ai-avatar { width:28px; height:28px; border-radius:50%; background:var(--green-600); display:flex; align-items:center; justify-content:center; font-size:14px; flex-shrink:0; }
+  .bubble-ai { background:var(--card-bg); border:1px solid var(--border); border-radius:18px 18px 18px 4px; padding:11px 14px; max-width:280px; font-size:14px; color:var(--text-dark); line-height:1.55; }
+  .bubble-ai .time { font-size:10px; color:var(--text-light); margin-top:5px; }
+  .msg-user { display:flex; justify-content:flex-end; }
+  .bubble-user { background:var(--green-600); border-radius:18px 18px 4px 18px; padding:11px 14px; max-width:280px; font-size:14px; color:white; line-height:1.55; }
+  .bubble-user .time { font-size:10px; color:rgba(255,255,255,0.5); margin-top:5px; text-align:right; }
+  .typing-indicator { display:flex; align-items:flex-end; gap:8px; }
+  .typing-dots { background:var(--card-bg); border:1px solid var(--border); border-radius:18px 18px 18px 4px; padding:12px 16px; display:flex; gap:4px; align-items:center; }
+  .typing-dots span { width:6px; height:6px; border-radius:50%; background:var(--text-light); animation:bounce 1.2s infinite; }
+  .typing-dots span:nth-child(2) { animation-delay:0.2s; }
+  .typing-dots span:nth-child(3) { animation-delay:0.4s; }
+  @keyframes bounce { 0%,80%,100%{transform:translateY(0);opacity:0.4} 40%{transform:translateY(-6px);opacity:1} }
+  .record-confirm { background:var(--card-bg); border:1px solid var(--border); border-radius:16px; overflow:hidden; max-width:280px; }
+  .record-confirm-header { background:var(--mint); padding:10px 14px; display:flex; align-items:center; gap:8px; font-size:12px; font-weight:600; color:var(--green-700); }
+  .record-confirm-body { padding:10px 14px; }
+  .confirm-row { display:flex; justify-content:space-between; align-items:center; padding:5px 0; font-size:13px; border-bottom:1px solid var(--border); }
+  .confirm-row:last-child { border-bottom:none; }
+  .confirm-label { color:var(--text-muted); }
+  .confirm-value { font-weight:500; color:var(--text-dark); }
+  .edit-input { border:1px solid var(--border); border-radius:6px; padding:4px 8px; font-size:13px; font-family:'DM Sans',sans-serif; color:var(--text-dark); background:white; width:120px; text-align:right; }
+  .edit-input:focus { outline:none; border-color:var(--green-500); }
+  .confirm-actions { display:flex; gap:8px; padding:10px 14px 12px; }
+  .btn-confirm { flex:1; background:var(--green-600); color:white; border:none; border-radius:10px; padding:8px; font-size:13px; font-weight:600; cursor:pointer; font-family:'DM Sans',sans-serif; transition:background 0.15s; }
+  .btn-confirm:hover { background:var(--green-700); }
+  .btn-edit { flex:1; background:var(--mint); color:var(--green-700); border:none; border-radius:10px; padding:8px; font-size:13px; font-weight:600; cursor:pointer; font-family:'DM Sans',sans-serif; transition:background 0.15s; }
+  .btn-edit:hover { background:var(--green-200); }
+  .quick-replies { display:flex; gap:6px; flex-wrap:wrap; padding:6px 16px 4px; flex-shrink:0; }
+  .quick-reply { background:var(--card-bg); border:1px solid var(--border); border-radius:16px; padding:6px 12px; font-size:12px; font-weight:500; color:var(--green-600); cursor:pointer; white-space:nowrap; transition:background 0.15s; }
+  .quick-reply:hover { background:var(--mint); }
+  .input-bar { padding:8px 16px 24px; background:var(--cream); border-top:1px solid var(--border); display:flex; align-items:flex-end; gap:10px; flex-shrink:0; }
+  .input-wrap { flex:1; background:var(--card-bg); border:1px solid var(--border); border-radius:24px; display:flex; align-items:center; padding:8px 12px; gap:8px; transition:border-color 0.2s; }
+  .input-wrap:focus-within { border-color:var(--green-500); }
+  .input-wrap input { flex:1; border:none; outline:none; font-size:14px; font-family:'DM Sans',sans-serif; color:var(--text-dark); background:transparent; }
+  .input-wrap input::placeholder { color:var(--text-light); }
+  .send-btn { width:40px; height:40px; border-radius:50%; background:var(--green-600); border:none; display:flex; align-items:center; justify-content:center; cursor:pointer; flex-shrink:0; transition:background 0.15s; }
+  .send-btn:hover { background:var(--green-700); }
+  .send-btn:disabled { background:var(--text-light); cursor:not-allowed; }
+  .img-btn { width:40px; height:40px; border-radius:50%; background:var(--mint); border:1px solid var(--border); display:flex; align-items:center; justify-content:center; cursor:pointer; flex-shrink:0; font-size:18px; transition:background 0.15s; }
+  .img-btn:hover { background:var(--green-200); }
+  .send-btn svg { width:18px; height:18px; color:white; }
+  .toast { position:absolute; bottom:90px; left:50%; transform:translateX(-50%); background:var(--green-700); color:white; padding:10px 16px; border-radius:12px; font-size:12px; font-weight:500; z-index:50; white-space:nowrap; opacity:0; transition:opacity 0.3s; pointer-events:none; }
+  .toast.show { opacity:1; }
+  /* Sleep Quick Entry Popup */
+  .sleep-popup-overlay { position:absolute; inset:0; background:rgba(0,0,0,0.4); z-index:200; display:none; align-items:flex-end; justify-content:center; }
+  .sleep-popup-overlay.show { display:flex; }
+  .sleep-popup-sheet { background:var(--bg); border-radius:20px 20px 0 0; width:100%; max-width:420px; padding:20px 20px calc(20px + env(safe-area-inset-bottom)) 20px; box-shadow:0 -4px 24px rgba(0,0,0,0.15); }
+  .sleep-popup-title { font-size:16px; font-weight:600; text-align:center; margin-bottom:16px; }
+  .sleep-popup-row { display:flex; align-items:center; justify-content:space-between; margin-bottom:12px; }
+  .sleep-popup-row label { font-size:14px; color:var(--text); }
+  .sleep-popup-row input[type="time"] { border:1.5px solid var(--border); border-radius:10px; padding:8px 12px; font-size:14px; width:120px; text-align:center; background:var(--card-bg); color:var(--text); }
+  .sleep-popup-actions { display:flex; gap:10px; margin-top:16px; }
+  .sleep-popup-actions button { flex:1; padding:12px; border-radius:12px; font-size:14px; font-weight:600; border:none; cursor:pointer; }
+  .sleep-popup-cancel { background:var(--border); color:var(--text-muted); }
+  .sleep-popup-save { background:var(--green-600); color:white; }
+</style>
+</head>
+<body>
+<div class="phone">
+
+  <!-- DASHBOARD -->
+  <div class="page active" id="page-dashboard">
+    <div class="status-bar"><span id="db-time">--:--</span><span>●●● 🔋</span></div>
+    <div class="page-header">
+      <div class="header-left">
+        <h1 id="db-greeting">早上好，小林 👋</h1>
+        <p id="db-date">加载中…</p>
+      </div>
+      <div class="avatar" onclick="showPage('settings')">小</div>
+    </div>
+    <div class="scroll-content">
+      <div class="greeting-band">
+        <div class="greeting-text" id="greeting-text">今天继续保持 💪</div>
+        <div class="streak-badge" id="streak-badge">🔥 0天</div>
+      </div>
+      <div class="weight-card">
+        <div class="weight-label">今日体重</div>
+        <div class="weight-main"><span class="weight-value" id="weight-value">--</span><span class="weight-unit">kg</span></div>
+        <div class="weight-change" id="weight-change"><span>↓</span><span>暂无数据</span></div>
+        <div class="weight-goal"><span id="weight-goal-text">目标 --kg</span><strong id="weight-progress-pct">0%</strong></div>
+        <div class="progress-track"><div class="progress-fill" id="weight-progress-bar" style="width:0%"></div></div>
+      </div>
+      <div class="trend-section">
+        <div class="section-header"><span class="section-title">体重趋势</span>
+          <div class="trend-tabs">
+            <div class="trend-tab">7天</div><div class="trend-tab active">14天</div><div class="trend-tab">30天</div>
+          </div>
+        </div>
+        <div class="mini-chart" id="weight-chart"></div>
+      </div>
+      <div class="section-label">今日概况</div>
+      <div class="stats-grid">
+        <div class="stat-card full-width">
+          <div class="stat-name">热量</div>
+          <div class="calorie-card">
+            <div class="ring-wrap">
+              <svg width="72" height="72" viewBox="0 0 72 72">
+                <circle cx="36" cy="36" r="30" fill="none" stroke="#e2ede7" stroke-width="6"/>
+                <circle cx="36" cy="36" r="30" fill="none" stroke="#45a873" stroke-width="6" stroke-dasharray="188.5" stroke-dashoffset="113.1" stroke-linecap="round" id="calorie-ring"/>
+              </svg>
+              <div class="ring-center"><div class="ring-pct" id="cal-pct">0%</div><div class="ring-pct-sub">摄入</div></div>
+            </div>
+            <div class="calorie-details">
+              <div class="calorie-row"><span class="cal-label"><span class="cal-dot" style="background:#45a873"></span>已摄入</span><span class="cal-val" id="cal-consumed">0</span></div>
+              <div class="calorie-row"><span class="cal-label"><span class="cal-dot" style="background:#e2ede7"></span>剩余</span><span class="cal-val" id="cal-remaining">0</span></div>
+              <div class="calorie-row"><span class="cal-label"><span class="cal-dot" style="background:#f0a050"></span>消耗</span><span class="cal-val" id="cal-burned">0</span></div>
+              <div class="calorie-row"><span class="cal-label" style="font-size:11px;color:#7a9585">每日目标</span><span class="cal-val" style="font-size:11px" id="cal-goal">2,000</span></div>
+            </div>
+          </div>
+        </div>
+        <div class="stat-card"><div class="stat-icon green">🏃</div><div class="stat-name">运动</div><div class="stat-value" id="stat-exercise-time">0<span style="font-size:13px;font-weight:400;color:var(--text-muted)">分钟</span></div><div class="stat-sub">跑步 · 消耗 <span id="stat-exercise-cal">0</span>kcal</div></div>
+        <div class="stat-card"><div class="stat-icon blue">💧</div><div class="stat-name">饮水</div><div class="stat-value" id="stat-water">0<span style="font-size:13px;font-weight:400;color:var(--text-muted)">L</span></div><div class="stat-sub">目标 <span>2.0L</span></div><div class="water-progress" id="water-progress"></div></div>
+        <div class="stat-card"><div class="stat-icon purple">🌙</div><div class="stat-name">睡眠</div><div class="stat-value" id="stat-sleep">--<span style="font-size:13px;font-weight:400;color:var(--text-muted)">小时</span></div><div class="stat-sub" id="stat-sleep-time">--</div></div>
+        <div class="stat-card"><div class="stat-icon orange">🌿</div><div class="stat-name">排便</div><div class="stat-value" id="stat-bowel">--<span style="font-size:13px;font-weight:400;color:var(--text-muted)">次</span></div><div class="stat-sub" id="stat-bowel-status" style="color:var(--green-500)">暂无记录</div></div>
+      </div>
+    </div>
+    <div class="bottom-nav">
+      <div class="nav-item active" onclick="showPage('dashboard')"><div class="nav-icon">⊞</div><div class="nav-label">仪表盘</div><div class="nav-dot"></div></div>
+      <div class="nav-item" onclick="showPage('records')"><div class="nav-icon">📋</div><div class="nav-label">记录</div><div class="nav-dot"></div></div>
+      <div class="nav-item" onclick="showPage('achievements')"><div class="nav-icon">🏅</div><div class="nav-label">成就</div><div class="nav-dot"></div></div>
+    </div>
+    <div class="fab" onclick="showPage('chat')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg></div>
+  </div>
+
+  <!-- RECORDS -->
+  <div class="page" id="page-records">
+    <div class="status-bar"><span>--:--</span><span>●●● 🔋</span></div>
+    <div class="page-header"><h1>记录</h1></div>
+    <div class="date-switcher">
+      <div class="date-arrow" onclick="changeDate(-1)">‹</div>
+      <div class="date-center"><div class="date-main" id="records-date-main">今天 <span class="date-today-badge">今天</span></div><div class="date-sub" id="records-date-sub">星期一</div></div>
+      <div class="date-arrow" onclick="changeDate(1)">›</div>
+    </div>
+    <div class="scroll-content" id="records-list"></div>
+    <div class="bottom-nav">
+      <div class="nav-item" onclick="showPage('dashboard')"><div class="nav-icon">⊞</div><div class="nav-label">仪表盘</div><div class="nav-dot"></div></div>
+      <div class="nav-item active" onclick="showPage('records')"><div class="nav-icon">📋</div><div class="nav-label">记录</div><div class="nav-dot"></div></div>
+      <div class="nav-item" onclick="showPage('achievements')"><div class="nav-icon">🏅</div><div class="nav-label">成就</div><div class="nav-dot"></div></div>
+    </div>
+    <div class="fab" onclick="showPage('chat')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg></div>
+
+    <!-- Record Edit Popup -->
+    <div class="edit-popup-overlay" id="rec-edit-popup" onclick="if(event.target===this)hideRecEditPopup()">
+      <div class="edit-popup-sheet" onclick="event.stopPropagation()">
+        <div class="edit-popup-title" id="rec-edit-title">编辑记录</div>
+        <div id="rec-edit-fields"></div>
+        <div class="edit-popup-actions">
+          <button class="edit-popup-cancel" onclick="hideRecEditPopup()">取消</button>
+          <button class="edit-popup-save" onclick="saveRecEditPopup()">保存</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ACHIEVEMENTS -->
+  <div class="page" id="page-achievements">
+    <div class="status-bar"><span>--:--</span><span>●●● 🔋</span></div>
+    <div class="page-header"><h1>成就与洞察</h1></div>
+    <div class="scroll-content">
+      <div class="section-label">AI 洞察</div>
+      <div class="insight-card"><div class="insight-top"><span class="insight-emoji">✨</span><span class="insight-title">减脂进展顺利</span></div><div class="insight-body">坚持每天打卡，配合运动和饮食管理，6个月目标一定能达成 💪</div><span class="insight-tag tag-good">坚持做到的事</span></div>
+      <div class="insight-card warn"><div class="insight-top"><span class="insight-emoji">💧</span><span class="insight-title">记得多喝水</span></div><div class="insight-body">每日饮水目标 2L，目前还有差距。记得每小时补充一次哦。</div><span class="insight-tag tag-warn">可以改进的地方</span></div>
+      <div class="insight-card tip"><div class="insight-top"><span class="insight-emoji">🍽️</span><span class="insight-title">蛋白质摄入很重要</span></div><div class="insight-body">减脂期间每公斤体重建议摄入 1.2g 蛋白质，记得多吃鸡蛋、鸡胸肉。</div><span class="insight-tag tag-tip">营养小提示</span></div>
+      <div class="section-label" style="margin-top:16px">本周总览</div>
+      <div class="weekly-strip" id="weekly-strip"><h3>本周</h3><div class="weekly-stats"><div class="weekly-stat"><div class="val" id="wk-exercise">0</div><div class="lbl">运动天数</div></div><div class="weekly-divider"></div><div class="weekly-stat"><div class="val" id="wk-sleep">--</div><div class="lbl">平均睡眠h</div></div><div class="weekly-divider"></div><div class="weekly-stat"><div class="val" id="wk-weight">--</div><div class="lbl">体重变化kg</div></div><div class="weekly-divider"></div><div class="weekly-stat"><div class="val" id="wk-checkin">0/7</div><div class="lbl">打卡天数</div></div></div></div>
+      <div class="heatmap-card">
+        <div class="heatmap-header"><span class="heatmap-title">打卡记录</span><div class="heatmap-legend"><span>少</span><div class="legend-dot" style="background:var(--border)"></div><div class="legend-dot" style="background:var(--green-100)"></div><div class="legend-dot" style="background:var(--green-400)"></div><div class="legend-dot" style="background:var(--green-500)"></div><span>多</span></div></div>
+        <div class="heatmap-grid" style="margin-bottom:4px"><div class="heatmap-day-label">一</div><div class="heatmap-day-label">二</div><div class="heatmap-day-label">三</div><div class="heatmap-day-label">四</div><div class="heatmap-day-label">五</div><div class="heatmap-day-label">六</div><div class="heatmap-day-label">日</div></div>
+        <div class="heatmap-grid" id="heatmap-grid"></div>
+      </div>
+      <div class="section-label">连续打卡</div>
+      <div class="streak-card"><div class="streak-flame">🔥</div><div class="streak-info"><h3 id="streak-current">0 天</h3><p>当前连续打卡</p><small id="streak-last">还没有记录</small></div><div class="streak-best"><div class="best-val" id="streak-best">0</div><div class="best-lbl">历史最长</div></div></div>
+      <div class="section-label">成就徽章</div>
+      <div class="badges-grid">
+        <div class="badge-item" id="badge-0"><div class="badge-emoji">🌱</div><div class="badge-name">健康新芽</div></div>
+        <div class="badge-item" id="badge-1"><div class="badge-emoji">🔥</div><div class="badge-name">连续7天</div></div>
+        <div class="badge-item" id="badge-2"><div class="badge-emoji">💧</div><div class="badge-name">饮水达人</div></div>
+        <div class="badge-item" id="badge-3"><div class="badge-emoji">🏃</div><div class="badge-name">运动初心</div></div>
+        <div class="badge-item" id="badge-4"><div class="badge-emoji">🥗</div><div class="badge-name">均衡饮食</div></div>
+        <div class="badge-item locked" id="badge-5"><div class="badge-emoji">🌙</div><div class="badge-name">睡眠卫士</div></div>
+        <div class="badge-item locked" id="badge-6"><div class="badge-emoji">🏆</div><div class="badge-name">连续30天</div></div>
+        <div class="badge-item locked" id="badge-7"><div class="badge-emoji">⚡</div><div class="badge-name">减脂成功</div></div>
+      </div>
+      <div class="section-label">进行中的挑战</div>
+      <div class="challenge-card"><div class="challenge-icon">💧</div><div class="challenge-info"><div class="challenge-name">21天饮水挑战</div><div class="challenge-desc">每天喝够 2L 水</div><div class="challenge-progress-wrap"><div class="challenge-track"><div class="challenge-fill" id="challenge-water-fill" style="width:0%"></div></div><span class="challenge-pct" id="challenge-water-pct">0/21</span></div></div></div>
+      <div class="challenge-card"><div class="challenge-icon">🏃</div><div class="challenge-info"><div class="challenge-name">2周早起运动</div><div class="challenge-desc">每天 07:30 前完成运动</div><div class="challenge-progress-wrap"><div class="challenge-track"><div class="challenge-fill" id="challenge-exercise-fill" style="width:0%"></div></div><span class="challenge-pct" id="challenge-exercise-pct">0/14</span></div></div></div>
+    </div>
+    <div class="bottom-nav">
+      <div class="nav-item" onclick="showPage('dashboard')"><div class="nav-icon">⊞</div><div class="nav-label">仪表盘</div><div class="nav-dot"></div></div>
+      <div class="nav-item" onclick="showPage('records')"><div class="nav-icon">📋</div><div class="nav-label">记录</div><div class="nav-dot"></div></div>
+      <div class="nav-item active" onclick="showPage('achievements')"><div class="nav-icon">🏅</div><div class="nav-label">成就</div><div class="nav-dot"></div></div>
+    </div>
+    <div class="fab" onclick="showPage('chat')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg></div>
+  </div>
+
+  <!-- CHAT -->
+  <div class="page" id="page-chat">
+    <div class="status-bar"><span>--:--</span><span>●●● 🔋</span></div>
+    <div class="chat-header">
+      <div class="close-btn" onclick="showPage('dashboard')">✕</div>
+      <div class="ai-avatar">🌿</div>
+      <div class="ai-info"><h3>健康助手</h3><p><span class="online-dot"></span> 公司平台</p></div>
+      <div class="chat-header-right">
+        <button class="header-btn-chat" onclick="clearChat()" title="清空对话">🗑</button>
+      </div>
+    </div>
+    <div class="messages" id="messagesArea">
+      <div class="date-divider" id="chat-date-divider">今天</div>
+    </div>
+    <div class="quick-replies">
+      <div class="quick-reply" onclick="sendQuickReply(this)">📝 记录早/午/晚餐</div>
+      <div class="quick-reply" onclick="sendQuickReply(this)">🏃 记录运动</div>
+      <div class="quick-reply" onclick="sendQuickReply(this)">💧 记录喝水</div>
+      <div class="quick-reply" onclick="sendQuickReply(this)">⚖️ 记录体重</div>
+      <div class="quick-reply" onclick="sendQuickReply(this)">❓ 问问能不能吃</div>
+    </div>
+    <div class="input-bar">
+      <div class="input-wrap"><input type="text" id="messageInput" placeholder="告诉我今天吃了什么…" onkeydown="handleKeyDown(event)"></div>
+      <button class="img-btn" id="imgBtn" onclick="document.getElementById('imgInput').click()">📷</button>
+      <input type="file" id="imgInput" accept="image/*" style="display:none" onchange="handleImgSelect(this)">
+      <button class="send-btn" id="sendBtn" onclick="sendMessage()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg></button>
+    </div>
+    <div class="toast" id="toast"></div>
+  </div>
+
+  <!-- SETTINGS -->
+  <div class="page" id="page-settings">
+    <div class="status-bar"><span>--:--</span><span>●●● 🔋</span></div>
+    <div class="page-header">
+      <div style="display:flex;align-items:center;gap:12px">
+        <div class="close-btn" onclick="showPage('dashboard')" style="background:var(--mint);width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:16px;color:var(--text-mid)">‹</div>
+        <h1>设置</h1>
+      </div>
+    </div>
+    <div class="scroll-content" id="settings-content">
+
+      <!-- Profile card (non-editable display) -->
+      <div class="profile-card">
+        <div id="profile-avatar" class="profile-avatar">小</div>
+        <div class="profile-info">
+          <h3 id="settings-name">小林</h3>
+          <p id="settings-tagline">打卡 12 天 · 减脂目标</p>
+        </div>
+      </div>
+
+      <!-- 基础信息 -->
+      <div class="section-label">基础信息</div>
+      <div class="settings-group">
+        <div class="settings-row" onclick="openEditPopup('昵称','name','text','👤',appData.user.name)">
+          <div class="row-icon ic-green">👤</div>
+          <div class="row-content"><div class="row-title">昵称</div></div>
+          <span class="row-value" id="show-name">小林</span>
+          <span class="row-arrow">›</span>
+        </div>
+        <div class="settings-row" onclick="openEditPopup('身高','height','number','📏',appData.user.height,'cm',100,220)">
+          <div class="row-icon ic-green">📏</div>
+          <div class="row-content"><div class="row-title">身高</div></div>
+          <span class="row-value" id="show-height">165 cm</span>
+          <span class="row-arrow">›</span>
+        </div>
+        <div class="settings-row" onclick="openEditPopup('当前体重','currentWeight','number','⚖️',appData.user.currentWeight,'kg',35,200)">
+          <div class="row-icon ic-green">⚖️</div>
+          <div class="row-content"><div class="row-title">当前体重</div></div>
+          <span class="row-value" id="show-currentWeight">75.4 kg</span>
+          <span class="row-arrow">›</span>
+        </div>
+        <div class="settings-row" onclick="openEditPopup('年龄','age','number','🎂',appData.user.age,'岁',10,99)">
+          <div class="row-icon ic-green">🎂</div>
+          <div class="row-content"><div class="row-title">年龄</div></div>
+          <span class="row-value" id="show-age">28 岁</span>
+          <span class="row-arrow">›</span>
+        </div>
+        <div class="settings-row" onclick="openSelectPopup('活动水平','activityLevel','⚡','中等',['久坐','轻度','中等','活跃','高强度'])">
+          <div class="row-icon ic-green">⚡</div>
+          <div class="row-content">
+            <div class="row-title">活动水平</div>
+            <div class="row-subtitle">影响每日热量建议</div>
+          </div>
+          <span class="row-value" id="show-activityLevel">中等</span>
+          <span class="row-arrow">›</span>
+        </div>
+      </div>
+
+      <!-- BMI & 热量参考 -->
+      <div class="settings-group" style="border:none;background:transparent;padding:0 0 4px">
+        <div class="settings-stats-bar">
+          <div class="stat-mini">
+            <div class="stat-mini-val" id="stat-bmi">--</div>
+            <div class="stat-mini-lbl">BMI</div>
+          </div>
+          <div class="stat-mini">
+            <div class="stat-mini-val" id="stat-cal">--</div>
+            <div class="stat-mini-lbl">每日热量 kcal</div>
+          </div>
+          <div class="stat-mini">
+            <div class="stat-mini-val" id="stat-bmr">--</div>
+            <div class="stat-mini-lbl">基础代谢</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 目标设置 -->
+      <div class="section-label">目标设置</div>
+      <div class="settings-group">
+        <div class="settings-row" style="cursor:default">
+          <div class="row-icon ic-orange">🎯</div>
+          <div class="row-content"><div class="row-title">目标类型</div></div>
+        </div>
+        <div class="goal-options" id="goal-type-chips">
+          <div class="goal-chip active" data-val="减脂" onclick="setGoalType(this,'减脂')">
+            <div class="chip-emoji">🔥</div><span class="chip-label">减脂</span>
+          </div>
+          <div class="goal-chip" data-val="增肌" onclick="setGoalType(this,'增肌')">
+            <div class="chip-emoji">💪</div><span class="chip-label">增肌</span>
+          </div>
+          <div class="goal-chip" data-val="维持" onclick="setGoalType(this,'维持')">
+            <div class="chip-emoji">⚖️</div><span class="chip-label">维持</span>
+          </div>
+          <div class="goal-chip" data-val="健康" onclick="setGoalType(this,'健康')">
+            <div class="chip-emoji">🌱</div><span class="chip-label">健康</span>
+          </div>
+        </div>
+        <div class="settings-row" onclick="openEditPopup('目标体重','goalWeight','number','🏁',appData.user.goalWeight,'kg',35,200)">
+          <div class="row-icon ic-orange">🏁</div>
+          <div class="row-content"><div class="row-title">目标体重</div></div>
+          <span class="row-value" id="show-goalWeight">65.0 kg</span>
+          <span class="row-arrow">›</span>
+        </div>
+        <div class="settings-row" onclick="openEditPopup('目标日期','goalDate','text','📅',appData.user.goalDate,'','','')">
+          <div class="row-icon ic-orange">📅</div>
+          <div class="row-content">
+            <div class="row-title">目标日期</div>
+            <div class="row-subtitle">预计达成时间</div>
+          </div>
+          <span class="row-value" id="show-goalDate">9月底</span>
+          <span class="row-arrow">›</span>
+        </div>
+      </div>
+
+      <!-- 健康状况 -->
+      <div class="section-label">健康状况</div>
+      <div class="settings-group">
+        <div class="settings-row" onclick="showRestrictionsPopup()">
+          <div class="row-icon ic-red">🏥</div>
+          <div class="row-content">
+            <div class="row-title">病史</div>
+            <div class="row-subtitle">AI 会根据此调整建议</div>
+          </div>
+          <span class="row-value" id="show-restrictions-summary" style="max-width:100px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">桥本甲状腺炎</span>
+          <span class="row-arrow">›</span>
+        </div>
+        <div class="settings-row" onclick="openEditPopup('过敏或饮食禁忌','allergies','text','⚠️',appData.user.allergies,'','','')">
+          <div class="row-icon ic-red">⚠️</div>
+          <div class="row-content"><div class="row-title">过敏或饮食禁忌</div></div>
+          <span class="row-value" id="show-allergies">无</span>
+          <span class="row-arrow">›</span>
+        </div>
+        <div class="settings-row" onclick="openEditPopup('特殊状态','specialStatus','text','✨',appData.user.specialStatus,'','','')">
+          <div class="row-icon ic-purple">✨</div>
+          <div class="row-content">
+            <div class="row-title">特殊状态</div>
+            <div class="row-subtitle">备孕、康复期、素食等</div>
+          </div>
+          <span class="row-value" id="show-specialStatus">无</span>
+          <span class="row-arrow">›</span>
+        </div>
+      </div>
+
+      <!-- AI 助手 -->
+      <div class="section-label">AI 助手</div>
+      <div class="settings-group">
+        <div class="settings-row" style="cursor:default">
+          <div class="row-icon ic-green">💬</div>
+          <div class="row-content"><div class="row-title">对话风格</div></div>
+        </div>
+        <div class="style-options" id="ai-style-chips">
+          <div class="style-chip active" data-val="鼓励型" onclick="setAiStyle(this,'鼓励型')">
+            <div class="chip-emoji">🤗</div><span class="chip-label">鼓励型</span>
+          </div>
+          <div class="style-chip" data-val="专业型" onclick="setAiStyle(this,'专业型')">
+            <div class="chip-emoji">🧑‍⚕️</div><span class="chip-label">专业型</span>
+          </div>
+          <div class="style-chip" data-val="简洁型" onclick="setAiStyle(this,'简洁型')">
+            <div class="chip-emoji">⚡</div><span class="chip-label">简洁型</span>
+          </div>
+        </div>
+        <div class="settings-row" onclick="openEditPopup('每日总结推送时间','pushTime','text','🌙',appData.user.pushTime,'','','')">
+          <div class="row-icon ic-green">🌙</div>
+          <div class="row-content"><div class="row-title">每日总结推送时间</div></div>
+          <span class="row-value" id="show-pushTime">22:30</span>
+          <span class="row-arrow">›</span>
+        </div>
+      </div>
+
+      <!-- 通知 -->
+      <div class="section-label">通知</div>
+      <div class="settings-group">
+        <div class="settings-row" onclick="toggleNotify('dailySummary')">
+          <div class="row-icon ic-blue">🔔</div>
+          <div class="row-content"><div class="row-title">每日总结通知</div></div>
+          <div class="toggle" id="toggle-dailySummary"><div class="toggle-thumb"></div></div>
+        </div>
+        <div class="settings-row" onclick="toggleNotify('waterRemind')">
+          <div class="row-icon ic-blue">💧</div>
+          <div class="row-content">
+            <div class="row-title">饮水提醒</div>
+            <div class="row-subtitle">每两小时提醒一次</div>
+          </div>
+          <div class="toggle" id="toggle-waterRemind"><div class="toggle-thumb"></div></div>
+        </div>
+        <div class="settings-row" onclick="toggleNotify('exerciseRemind')">
+          <div class="row-icon ic-blue">🏃</div>
+          <div class="row-content">
+            <div class="row-title">运动提醒</div>
+            <div class="row-subtitle">未打卡时提醒</div>
+          </div>
+          <div class="toggle off" id="toggle-exerciseRemind"><div class="toggle-thumb"></div></div>
+        </div>
+      </div>
+
+      <!-- 其他 -->
+      <div class="section-label">其他</div>
+      <div class="settings-group">
+        <div class="settings-row" onclick="importHistoryData()" id="import-btn">
+          <div class="row-icon ic-green">📥</div>
+          <div class="row-content"><div class="row-title">导入Excel历史数据</div><div class="row-subtitle">从卡女士减脂汇总表同步</div></div>
+          <span class="row-value" id="import-status"></span>
+          <span class="row-arrow">›</span>
+        </div>
+        <div class="settings-row" onclick="showToast('导出功能开发中',1500)">
+          <div class="row-icon ic-gray">📤</div>
+          <div class="row-content"><div class="row-title">导出数据</div></div>
+          <span class="row-arrow">›</span>
+        </div>
+        <div class="settings-row" onclick="showToast('隐私设置开发中',1500)">
+          <div class="row-icon ic-gray">🔒</div>
+          <div class="row-content"><div class="row-title">隐私与数据</div></div>
+          <span class="row-arrow">›</span>
+        </div>
+        <div class="settings-row" onclick="showToast('本产品建议仅供参考，不构成医疗意见',1500)">
+          <div class="row-icon ic-gray">📋</div>
+          <div class="row-content">
+            <div class="row-title">免责声明</div>
+            <div class="row-subtitle">本产品建议仅供参考，不构成医疗意见</div>
+          </div>
+          <span class="row-arrow">›</span>
+        </div>
+      </div>
+
+      <!-- Danger -->
+      <div class="settings-group" style="margin-bottom:24px">
+        <div class="settings-row danger-row" onclick="if(confirm('确定要清除所有数据吗？此操作不可撤销！')){localStorage.removeItem('health_diary_data');location.reload()}">
+          <div class="row-icon ic-red">🗑️</div>
+          <div class="row-content"><div class="row-title">清除所有数据</div></div>
+          <span class="row-arrow">›</span>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Generic Edit Popup -->
+    <div class="edit-popup-overlay" id="edit-popup-overlay" onclick="if(event.target===this)hideEditPopup()">
+      <div class="edit-popup-sheet" onclick="event.stopPropagation()">
+        <div class="edit-popup-title" id="edit-popup-title">编辑</div>
+        <div style="display:flex;align-items:center;justify-content:center;gap:4px">
+          <input type="text" class="edit-popup-input" id="edit-popup-input" value="">
+          <span class="edit-popup-unit" id="edit-popup-unit"></span>
+        </div>
+        <div class="edit-popup-actions">
+          <button class="edit-popup-cancel" onclick="hideEditPopup()">取消</button>
+          <button class="edit-popup-save" onclick="saveEditPopup()">保存</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Select Popup -->
+    <div class="edit-popup-overlay" id="select-popup-overlay" onclick="if(event.target===this)hideSelectPopup()">
+      <div class="edit-popup-sheet" onclick="event.stopPropagation()">
+        <div class="edit-popup-title" id="select-popup-title">选择</div>
+        <div class="select-list" id="select-popup-list"></div>
+        <div class="edit-popup-actions" style="margin-top:10px">
+          <button class="edit-popup-cancel" onclick="hideSelectPopup()">取消</button>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+</div>
+
+<script>
+// ═══════════════════════════════════════════════════════
+// DATA STORE
+// ═══════════════════════════════════════════════════════
+const STORAGE_KEY = 'health_diary_data';
+
+function loadData() {
+  try { return JSON.parse(localStorage.getItem(STORAGE_KEY)) || getDefaultData(); }
+  catch { return getDefaultData(); }
+}
+function saveData(d) { localStorage.setItem(STORAGE_KEY, JSON.stringify(d)); }
+
+function getDefaultData() {
+  return {
+    user: {
+      name: '小林', startWeight: 75.4, currentWeight: 75.4, goalWeight: 65.0,
+      dailyCalGoal: 1600, startDate: '2026-05-13',
+      height: 165, age: 28, activityLevel: '中等',
+      goalType: '减脂', goalDate: '9月底',
+      aiStyle: '鼓励型', pushTime: '22:30',
+      restrictions: { tags: ['低脂肪', '低碘', '保护胃', '桥本甲状腺炎'], prohibitions: '海带、紫菜、辛辣、油炸、咖啡、浓茶' },
+      specialStatus: '', allergies: '无',
+      notifications: { dailySummary: true, waterRemind: true, exerciseRemind: false }
+    },
+    logs: {},   // { '2026-05-20': { meals:[], exercise:{type,min,cal}, water:ml, bowel:true, weight:kg, sleep:{bed,wake,hours} } }
+    streak: 0,
+    bestStreak: 0,
+    lastCheckin: null
+  };
+}
+
+let appData = loadData();
+
+// ═══════════════════════════════════════════════════════
+// NAVIGATION
+// ═══════════════════════════════════════════════════════
+function showPage(name) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.getElementById('page-' + name).classList.add('active');
+  const sc = document.querySelector('#page-' + name + ' .scroll-content');
+  if (sc) sc.scrollTop = 0;
+  if (name === 'chat') {
+    const msgs = document.getElementById('messagesArea');
+    if (msgs) msgs.scrollTop = msgs.scrollHeight;
+  }
+  if (name === 'records') renderRecords();
+  if (name === 'dashboard') refreshDashboard();
+  if (name === 'settings') renderSettings();
+}
+
+// ═══════════════════════════════════════════════════════
+// DASHBOARD
+// ═══════════════════════════════════════════════════════
+function refreshDashboard() {
+  const now = new Date();
+  const h = String(now.getHours()).padStart(2,'0');
+  const m = String(now.getMinutes()).padStart(2,'0');
+  document.querySelectorAll('.status-bar span:first-child').forEach(el => el.textContent = `${h}:${m}`);
+
+  // Greeting
+  const hour = now.getHours();
+  const greeting = hour < 12 ? '早上好' : hour < 18 ? '下午好' : '晚上好';
+  document.getElementById('db-greeting').textContent = `${greeting}，${appData.user.name || '小林'} 👋`;
+  const months = ['1月','2月','3月','4月','5月','6月','7月','8月','9月','10月','11月','12月'];
+  const days = ['星期日','星期一','星期二','星期三','星期四','星期五','星期六'];
+  document.getElementById('db-date').textContent = `${now.getFullYear()}年${months[now.getMonth()]}${now.getDate()}日 · ${days[now.getDay()]}`;
+
+  // Today data
+  const todayKey = todayStr();
+  const today = appData.logs[todayKey] || {};
+
+  // Weight（取 weightEntries 第一条，即早晨空腹体重）
+  const weightEntries = today.weightEntries || [];
+  const morningWeight = weightEntries.length > 0 ? weightEntries[0].value : appData.user.currentWeight;
+  const weight = morningWeight || appData.user.currentWeight;
+  document.getElementById('weight-value').textContent = weight.toFixed(1);
+  const diff = appData.user.startWeight - weight;
+  const pct = Math.round((diff / (appData.user.startWeight - appData.user.goalWeight)) * 100);
+  if (diff > 0) {
+    document.getElementById('weight-change').innerHTML = `<span>↓</span><span>较起始 −${diff.toFixed(1)}kg</span>`;
+  } else {
+    document.getElementById('weight-change').innerHTML = `<span>↑</span><span>较起始 +${(-diff).toFixed(1)}kg</span>`;
+  }
+  document.getElementById('weight-goal-text').textContent = `目标 ${appData.user.goalWeight}kg`;
+  document.getElementById('weight-progress-pct').textContent = `${Math.max(0,Math.min(100,pct))}%`;
+  document.getElementById('weight-progress-bar').style.width = `${Math.max(0,Math.min(100,pct))}%`;
+
+  // Greeting band
+  const greetingMsgs = [
+    '今天继续保持 💪', '加油，打卡别断 🔥',
+    '每一步都算数 🌿', `${appData.streak}天连续，继续保持！`
+  ];
+  document.getElementById('greeting-text').textContent = greetingMsgs[Math.floor(Math.random() * greetingMsgs.length)];
+  document.getElementById('streak-badge').textContent = `🔥 ${appData.streak}天`;
+
+  // Weight chart (fake 14-day)
+  const chart = document.getElementById('weight-chart');
+  chart.innerHTML = '';
+  for (let i = 13; i >= 0; i--) {
+    const d = new Date(now);
+    d.setDate(d.getDate() - i);
+    const key = dateStr(d);
+    const w = appData.logs[key]?.weightEntries?.[0]?.value;
+    const h = w ? Math.round(20 + (appData.user.startWeight - w) / (appData.user.startWeight - appData.user.goalWeight) * 40) : 20 + Math.random() * 20;
+    const isToday = i === 0;
+    const label = i === 0 ? '今' : `${d.getDate()}`;
+    chart.innerHTML += `<div class="bar-group"><div class="bar ${isToday?'today':''}" style="height:${Math.max(10,h)}px"></div><div class="bar-label">${label}</div></div>`;
+  }
+
+  // Calories
+  const meals = today.meals || [];
+  const consumed = meals.reduce((s,m) => s + (m.cal||0), 0);
+  const burned = today.exercise?.cal || 0;
+  const remaining = appData.user.dailyCalGoal - consumed + burned;
+  const calPct = Math.round(consumed / appData.user.dailyCalGoal * 100);
+  document.getElementById('cal-consumed').textContent = consumed.toLocaleString();
+  document.getElementById('cal-remaining').textContent = remaining.toLocaleString();
+  document.getElementById('cal-burned').textContent = burned.toLocaleString();
+  document.getElementById('cal-goal').textContent = appData.user.dailyCalGoal.toLocaleString();
+  document.getElementById('cal-pct').textContent = `${calPct}%`;
+  const ringOffset = Math.round(188.5 * (1 - calPct/100));
+  document.getElementById('calorie-ring').setAttribute('stroke-dashoffset', ringOffset);
+
+  // Exercise
+  const exMin = today.exercise?.duration || 0;
+  document.getElementById('stat-exercise-time').innerHTML = `${exMin}<span style="font-size:13px;font-weight:400;color:var(--text-muted)">分钟</span>`;
+  document.getElementById('stat-exercise-cal').textContent = burned;
+
+  // Water（兼容 waterEntries 数组格式，也兼容旧 water 数字格式）
+  const waterEntries = today.waterEntries || [];
+  const water = waterEntries.length > 0 ? waterEntries.reduce((s, e) => s + (e.amount || 0), 0) : (today.water || 0);
+  document.getElementById('stat-water').innerHTML = `${(water/1000).toFixed(1)}<span style="font-size:13px;font-weight:400;color:var(--text-muted)">L</span>`;
+  const waterPct = Math.round(water / 2000 * 10);
+  const waterHtml = Array.from({length:10},(_,i) => `<div class="water-drop ${i<waterPct?'filled':''}"></div>`).join('');
+  document.getElementById('water-progress').innerHTML = waterHtml;
+
+  // Sleep（当天睡眠时长 = 今天 wake_time − 前一天 sleep_time）
+  const yesterdayKey = dateStr(new Date(Date.now() - 86400000));
+  const yesterdaySleep = appData.logs[yesterdayKey]?.sleep_time;
+  const todayWake = today.wake_time;
+  if (yesterdaySleep && todayWake) {
+    const [sh, sm] = yesterdaySleep.split(':').map(Number);
+    const [wh, wm] = todayWake.split(':').map(Number);
+    const sleepMins = (24 * 60 + wh * 60 + wm) - (sh * 60 + sm);
+    const hours = (sleepMins / 60).toFixed(1);
+    document.getElementById('stat-sleep').innerHTML = `${hours}<span style="font-size:13px;font-weight:400;color:var(--text-muted)">小时</span>`;
+    document.getElementById('stat-sleep-time').textContent = `${yesterdaySleep} → ${todayWake}`;
+  } else {
+    document.getElementById('stat-sleep').innerHTML = `--<span style="font-size:13px;font-weight:400;color:var(--text-muted)">小时</span>`;
+    document.getElementById('stat-sleep-time').textContent = '记录起床+睡觉时间';
+  }
+
+  // Bowel
+  if (today.bowel !== undefined) {
+    const bowel = today.bowel;
+    const bowelIsObj = typeof bowel === 'object' && bowel !== null;
+    const bowelCount = bowelIsObj ? (bowel.count || (bowel.times ? bowel.times.length : 0)) : (bowel ? 1 : 0);
+    document.getElementById('stat-bowel').innerHTML = `${bowelCount}<span style="font-size:13px;font-weight:400;color:var(--text-muted)">次</span>`;
+    document.getElementById('stat-bowel-status').textContent = bowelCount > 0 ? '状态正常' : '暂无记录';
+  }
+}
+
+// ═══════════════════════════════════════════════════════
+// RECORDS
+// ═══════════════════════════════════════════════════════
+let recordsDateOffset = 0;
+function todayStr() { return dateStr(new Date()); }
+function dateStr(d) { return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`; }
+
+function changeDate(dir) {
+  recordsDateOffset += dir;
+  renderRecords();
+}
+
+function renderRecords() {
+  const d = new Date();
+  d.setDate(d.getDate() + recordsDateOffset);
+  const key = dateStr(d);
+  const months = ['1月','2月','3月','4月','5月','6月','7月','8月','9月','10月','11月','12月'];
+  const days = ['星期日','星期一','星期二','星期三','星期四','星期五','星期六'];
+  const isToday = recordsDateOffset === 0;
+  const cardDate = isToday ? '今天' : `${months[d.getMonth()]}${d.getDate()}日`;
+  document.getElementById('records-date-main').innerHTML = `${months[d.getMonth()]}${d.getDate()}日${isToday?' <span class="date-today-badge">今天</span>':''}`;
+  document.getElementById('records-date-sub').textContent = days[d.getDay()];
+
+  const log = appData.logs[key] || {};
+  const meals = log.meals || [];
+  const totalCal = meals.reduce((s,m) => s+(m.cal||0), 0);
+
+  let html = '';
+
+  // ── 饮食 ──
+  html += categoryCard('饮食', '🥗', 'cat-green', meals.length, totalCal > 0 ? `${totalCal.toLocaleString()} kcal` : '暂无记录',
+    meals.map((m,i) => recordItem(m.time||'--:--', m.name, `${m.cal ? m.cal + ' kcal' : ''}`, '', 'AI', m.macros, 'meals', i)).join('') +
+    `<div class="add-entry" onclick="showPage('chat')"><span>+</span> 手动添加饮食</div>`, true, cardDate);
+
+  // ── 运动 ──
+  const ex = log.exercise;
+  const exItem = ex ? recordItem(ex.time||'--:--', ex.type||'运动',
+    [ex.distance ? `${ex.distance}km` : '', ex.pace ? `配速 ${ex.pace}` : '', ex.cal ? `消耗 ${ex.cal}kcal` : ''].filter(Boolean).join(' · '),
+    ex.duration ? `${ex.duration} 分钟` : '', 'AI', null, 'exercise', 0) : '';
+  html += categoryCard('运动', '🏃', 'cat-blue', ex?1:0,
+    ex ? `${ex.duration||ex.distance} ${ex.distance?'km':'分钟'}` : '暂无记录',
+    exItem + `<div class="add-entry" onclick="showPage('chat')"><span>+</span> 手动添加运动</div>`, true, cardDate);
+
+  // ── 睡眠 ──（跨天：前一天 sleep_time → 当前日期 wake_time）
+  const prevDay = new Date(d);
+  prevDay.setDate(prevDay.getDate() - 1);
+  const prevLog = appData.logs[dateStr(prevDay)] || {};
+  const sleepWake = log.wake_time;
+  const sleepSleep = prevLog.sleep_time;
+  const sleepHasData = sleepWake || sleepSleep;
+  let sleepDuration = '';
+  let sleepSummary = '暂无记录';
+  let sleepItems = '';
+
+  if (sleepSleep && sleepWake) {
+    // 计算时长
+    const [sh, sm] = sleepSleep.split(':').map(Number);
+    const [wh, wm] = sleepWake.split(':').map(Number);
+    let mins = (wh * 60 + wm) - (sh * 60 + sm);
+    if (mins < 0) mins += 24 * 60;
+    const h = Math.floor(mins / 60);
+    const m = mins % 60;
+    sleepDuration = m > 0 ? `${h}h${m}m` : `${h}h`;
+    sleepSummary = `${sleepDuration}`;
+    sleepItems = recordItem(sleepSleep, `睡觉 ${sleepSleep} → 起床 ${sleepWake}`, '', sleepDuration, '');
+  } else if (sleepWake) {
+    sleepItems = recordItem(sleepWake, '起床', '', '', '', null, 'sleep_wake', 0);
+    sleepSummary = `起床 ${sleepWake}`;
+  } else if (sleepSleep) {
+    sleepItems = recordItem(sleepSleep, '睡觉', '', '', '', null, 'sleep_sleep', 0);
+    sleepSummary = `睡觉 ${sleepSleep}`;
+  }
+  html += categoryCard('睡眠', '🌙', 'cat-purple', sleepSleep && sleepWake ? 1 : 0,
+    sleepSummary,
+    sleepItems + `<div class="add-entry" onclick="showSleepPopup()"><span>+</span> 记录睡眠</div>`, true, cardDate);
+
+  // ── 饮水 ──
+  const waterEntries = log.waterEntries || [];
+  const totalWater = waterEntries.length > 0 ? waterEntries.reduce((s, e) => s + (e.amount || 0), 0) : (log.water || 0);
+  html += categoryCard('饮水', '💧', 'cat-blue', waterEntries.length, totalWater > 0 ? `${totalWater.toLocaleString()} ml` : '暂无记录',
+    waterEntries.map((e,i) => recordItem(e.time||'--:--', e.label||'饮水', '', `${e.amount||0}ml`, '', null, 'waterEntries', i)).join('') +
+    `<div class="add-entry" onclick="showPage('chat')"><span>+</span> 记录饮水</div>`, true, cardDate);
+
+  // ── 体重 ──
+  const weightEntries = log.weightEntries || [];
+  const morningWeight = weightEntries.length > 0 ? weightEntries[0] : null;
+  const weightItems = weightEntries.map((w,i) => recordItem(w.time||'--:--', '晨间体重', '', `${w.value||w} kg`, '', null, 'weightEntries', i)).join('');
+  html += categoryCard('体重', '⚖️', 'cat-green', weightEntries.length,
+    morningWeight ? `${morningWeight.value} kg` : '暂无记录',
+    weightItems + `<div class="add-entry" onclick="showPage('chat')"><span>+</span> 记录体重</div>`, true, cardDate);
+
+  // ── 排便 ──
+  const bowel = log.bowel;
+  const bowelMovements = log.bowel_movements;
+  const bowelIsObj = typeof bowel === 'object' && bowel !== null;
+  const bowelCount = bowelIsObj ? (bowel.count || (bowel.times ? bowel.times.length : 0)) : (bowelMovements ? bowelMovements.length : (bowel !== undefined ? 1 : 0));
+  const bowelSummary = bowelIsObj ? `${bowelCount}次` : (bowelMovements ? `${bowelMovements.length}次` : (bowel ? '正常' : '暂无记录'));
+  let bowelItems = '';
+  if (bowelIsObj && bowel.times && bowel.times.length > 0) {
+    const timesArr = typeof bowel.times === 'string'
+      ? bowel.times.split('、').map(t => ({ time: t.trim() }))
+      : bowel.times.map(t => typeof t === 'string' ? { time: t } : t);
+    bowelItems = timesArr.map((t, i) => recordItem(t.time||'--:--', `排便记录`, bowel.note||'状态正常', '', 'AI', null, 'bowel_times', i)).join('');
+  } else if (bowelMovements && bowelMovements.length > 0) {
+    const timesArr = bowelMovements.map(t => typeof t === 'string' ? { time: t } : t);
+    bowelItems = timesArr.map((t, i) => recordItem(t.time||'--:--', `排便记录`, '状态正常', '', 'AI', null, 'bowel_movements', i)).join('');
+  } else if (bowel !== undefined) {
+    bowelItems = recordItem('--:--', '排便记录', bowelIsObj ? `${bowelCount}次` : (bowel ? '正常' : '无'), '', '', null, '', 0);
+  }
+  html += categoryCard('排便', '🌿', 'cat-orange', bowelCount, bowelSummary,
+    (bowel !== undefined ? bowelItems : '') + `<div class="add-entry" onclick="showPage('chat')"><span>+</span> 手动记录</div>`, true, cardDate);
+
+  document.getElementById('records-list').innerHTML = html;
+}
+
+function categoryCard(title, icon, iconClass, count, summary, content, open, dateBadge) {
+  return `<div class="category-card">
+    <div class="category-header" onclick="toggleCat(this)">
+      <div class="category-left"><div class="category-icon ${iconClass}">${icon}</div><div class="category-info"><h3>${dateBadge ? `<span class="card-date-badge">${dateBadge}</span> ` : ''}${title}</h3><p>${count} 条记录</p></div></div>
+      <div class="category-right"><span class="category-summary">${summary}</span><span class="chevron ${open?'open':''}">▾</span></div>
+    </div>
+    <div class="record-list" style="${open?'':'display:none'}">${content}</div>
+  </div>`;
+}
+
+function recordItem(time, title, detail, value, sourceTag, macros, cat, idx) {
+  const source = sourceTag ? ` <span class="source-tag">✦ ${sourceTag}</span>` : '';
+  const macroBar = macros ? `<div class="macros-bar"><div class="macro-seg" style="width:${macros.p||40}%;background:#45a873"></div><div class="macro-seg" style="width:${macros.c||30}%;background:#5bb8e8"></div><div class="macro-seg" style="width:${macros.f||30}%;background:#f0a050"></div></div>` : '';
+  const valHtml = value ? `<span class="record-cal">${value}</span>` : '';
+  const hasEdit = cat && idx !== undefined;
+  return `<div class="record-item">
+    <span class="record-time">${time}</span>
+    <div class="record-dot active"></div>
+    <div class="record-content">
+      <div class="record-title">${title}${source}</div>
+      ${detail ? `<div class="record-detail">${detail}</div>` : ''}
+      ${macroBar}
+    </div>
+    ${valHtml}
+    ${hasEdit ? `<span class="record-edit" onclick="event.stopPropagation();editRecordItem('${cat}',${idx})">✎</span><span class="record-edit" onclick="event.stopPropagation();deleteRecordItem('${cat}',${idx})" style="color:#d04040;margin-left:2px">🗑</span>` : `<span class="record-edit" style="visibility:hidden">✎</span>`}
+  </div>`;
+}
+
+function toggleCat(header) {
+  const list = header.nextElementSibling;
+  const chevron = header.querySelector('.chevron');
+  list.style.display = list.style.display === 'none' ? 'block' : 'none';
+  chevron.classList.toggle('open', list.style.display !== 'none');
+}
+
+// ═══════════════════════════════════════════════════════
+// RECORD ITEM EDIT & DELETE
+// ═══════════════════════════════════════════════════════
+let recEditMeta = null;
+
+function getRecLog() {
+  const d = new Date();
+  d.setDate(d.getDate() + recordsDateOffset);
+  return { dateKey: dateStr(d), log: appData.logs[dateStr(d)] || {} };
+}
+
+function editRecordItem(cat, idx) {
+  const { dateKey, log } = getRecLog();
+  let data = {};
+  let fields = [];
+
+  // Figure out the record data based on category
+  if (cat === 'meals') {
+    data = log.meals[idx] || {};
+    fields = [
+      { key: 'time', label: '时间', type: 'time', val: data.time || '' },
+      { key: 'name', label: '食物', type: 'text', val: data.name || '' },
+      { key: 'cal', label: '热量 (kcal)', type: 'number', val: data.cal || '' }
+    ];
+  } else if (cat === 'waterEntries') {
+    data = (log.waterEntries || [])[idx] || {};
+    fields = [
+      { key: 'time', label: '时间', type: 'time', val: data.time || '' },
+      { key: 'amount', label: '饮水量 (ml)', type: 'number', val: data.amount || '' },
+      { key: 'label', label: '备注', type: 'text', val: data.label || '' }
+    ];
+  } else if (cat === 'weightEntries') {
+    data = (log.weightEntries || [])[idx] || {};
+    fields = [
+      { key: 'time', label: '时间', type: 'time', val: data.time || '' },
+      { key: 'value', label: '体重 (kg)', type: 'number', val: data.value || data || '' }
+    ];
+  } else if (cat === 'exercise') {
+    data = log.exercise || {};
+    fields = [
+      { key: 'time', label: '时间', type: 'time', val: data.time || '' },
+      { key: 'type', label: '运动类型', type: 'text', val: data.type || '' },
+      { key: 'duration', label: '时长 (分钟)', type: 'number', val: data.duration || '' },
+      { key: 'distance', label: '距离 (km)', type: 'number', val: data.distance || '' },
+      { key: 'pace', label: '配速', type: 'text', val: data.pace || '' },
+      { key: 'cal', label: '消耗 (kcal)', type: 'number', val: data.cal || '' }
+    ];
+  } else if (cat === 'sleep_wake') {
+    fields = [{ key: 'time', label: '起床时间', type: 'time', val: log.wake_time || '' }];
+  } else if (cat === 'sleep_sleep') {
+    fields = [{ key: 'time', label: '睡觉时间', type: 'time', val: log.sleep_time || '' }];
+  } else if (cat === 'bowel_times') {
+    if (typeof log.bowel === 'object' && log.bowel.times) {
+      const t = typeof log.bowel.times === 'string'
+        ? log.bowel.times.split('、').map(x => x.trim())[idx]
+        : (typeof log.bowel.times[idx] === 'string' ? log.bowel.times[idx] : (log.bowel.times[idx]?.time || ''));
+      fields = [
+        { key: 'time', label: '时间', type: 'time', val: t },
+        { key: 'note', label: '备注', type: 'text', val: log.bowel.note || '' }
+      ];
+    }
+  } else if (cat === 'bowel_movements') {
+    const bm = (log.bowel_movements || [])[idx];
+    const t = typeof bm === 'string' ? bm : (bm?.time || '');
+    fields = [{ key: 'time', label: '时间', type: 'time', val: t }];
+  }
+
+  if (fields.length === 0) return;
+
+  recEditMeta = { cat, idx, dateKey, fields };
+
+  // Build fields HTML
+  document.getElementById('rec-edit-title').textContent = '编辑记录';
+  document.getElementById('rec-edit-fields').innerHTML = fields.map(f => {
+    const step = f.type === 'number' ? ' step="any"' : '';
+    return `<div style="margin-bottom:10px"><label style="display:block;font-size:13px;color:var(--text-mid);margin-bottom:4px">${f.label}</label><input type="${f.type}" data-key="${f.key}" value="${f.val}"${step} style="width:100%;padding:10px 14px;border:1.5px solid var(--border);border-radius:10px;font-size:15px;font-family:'DM Mono',monospace;color:var(--text-dark);background:var(--card-bg)"></div>`;
+  }).join('');
+
+  document.getElementById('rec-edit-popup').classList.add('show');
+  setTimeout(() => {
+    const first = document.querySelector('#rec-edit-fields input');
+    if (first) first.focus();
+  }, 200);
+}
+
+function saveRecEditPopup() {
+  if (!recEditMeta) return;
+  const { cat, idx, dateKey } = recEditMeta;
+  const log = appData.logs[dateKey];
+  const inputs = document.querySelectorAll('#rec-edit-fields input');
+  const vals = {};
+  inputs.forEach(inp => { vals[inp.dataset.key] = inp.value.trim(); });
+
+  if (cat === 'meals') {
+    const m = log.meals[idx];
+    if (vals.time) m.time = vals.time;
+    if (vals.name) m.name = vals.name;
+    if (vals.cal) m.cal = parseFloat(vals.cal) || 0;
+  } else if (cat === 'waterEntries') {
+    const w = (log.waterEntries || [])[idx];
+    if (vals.time) w.time = vals.time;
+    if (vals.amount) w.amount = parseFloat(vals.amount) || 0;
+    if (vals.label !== undefined) w.label = vals.label;
+  } else if (cat === 'weightEntries') {
+    const w = (log.weightEntries || [])[idx];
+    if (vals.time) w.time = vals.time;
+    if (vals.value) w.value = parseFloat(vals.value) || 0;
+    // Sync currentWeight if editing latest entry
+    appData.user.currentWeight = parseFloat(vals.value) || appData.user.currentWeight;
+  } else if (cat === 'exercise') {
+    const ex = log.exercise || {};
+    if (vals.time) ex.time = vals.time;
+    if (vals.type) ex.type = vals.type;
+    if (vals.duration) ex.duration = vals.duration;
+    if (vals.distance) ex.distance = vals.distance;
+    if (vals.pace) ex.pace = vals.pace;
+    if (vals.cal) ex.cal = parseFloat(vals.cal) || 0;
+    log.exercise = ex;
+  } else if (cat === 'sleep_wake') {
+    log.wake_time = vals.time || log.wake_time;
+  } else if (cat === 'sleep_sleep') {
+    log.sleep_time = vals.time || log.sleep_time;
+  } else if (cat === 'bowel_times') {
+    if (typeof log.bowel === 'object' && log.bowel.times) {
+      if (typeof log.bowel.times === 'string') {
+        const parts = log.bowel.times.split('、').map(x => x.trim());
+        parts[idx] = vals.time || parts[idx];
+        log.bowel.times = parts.join('、');
+      } else {
+        log.bowel.times[idx] = vals.time || log.bowel.times[idx];
+      }
+      if (vals.note !== undefined) log.bowel.note = vals.note;
+    }
+  } else if (cat === 'bowel_movements') {
+    (log.bowel_movements || [])[idx] = vals.time || (log.bowel_movements || [])[idx];
+  }
+
+  saveData(appData);
+  hideRecEditPopup();
+  renderRecords();
+  showToast('已更新', 1500);
+}
+
+function hideRecEditPopup() {
+  document.getElementById('rec-edit-popup').classList.remove('show');
+  recEditMeta = null;
+}
+
+function deleteRecordItem(cat, idx) {
+  if (!confirm('确定删除这条记录吗？')) return;
+  const { dateKey, log } = getRecLog();
+
+  if (cat === 'meals') {
+    log.meals.splice(idx, 1);
+  } else if (cat === 'waterEntries') {
+    (log.waterEntries || []).splice(idx, 1);
+  } else if (cat === 'weightEntries') {
+    (log.weightEntries || []).splice(idx, 1);
+  } else if (cat === 'exercise') {
+    delete log.exercise;
+  } else if (cat === 'sleep_wake') {
+    delete log.wake_time;
+  } else if (cat === 'sleep_sleep') {
+    delete log.sleep_time;
+  } else if (cat === 'bowel_times') {
+    if (typeof log.bowel === 'object' && log.bowel.times) {
+      if (typeof log.bowel.times === 'string') {
+        const parts = log.bowel.times.split('、').map(x => x.trim());
+        parts.splice(idx, 1);
+        log.bowel.times = parts.length > 0 ? parts.join('、') : [];
+      } else {
+        log.bowel.times.splice(idx, 1);
+      }
+      log.bowel.count = (Array.isArray(log.bowel.times) ? log.bowel.times.length : (typeof log.bowel.times === 'string' ? log.bowel.times.split('、').length : 0));
+    }
+  } else if (cat === 'bowel_movements') {
+    (log.bowel_movements || []).splice(idx, 1);
+  }
+
+  saveData(appData);
+  renderRecords();
+  showToast('已删除', 1500);
+}
+
+// ═══════════════════════════════════════════════════════
+// ACHIEVEMENTS
+// ═══════════════════════════════════════════════════════
+function refreshAchievements() {
+  // Streak
+  document.getElementById('streak-current').textContent = `${appData.streak} 天`;
+  document.getElementById('streak-best').textContent = appData.bestStreak;
+  document.getElementById('streak-last').textContent = appData.lastCheckin ? `最近：${appData.lastCheckin}` : '还没有记录';
+
+  // Badges
+  const badges = [
+    appData.streak >= 1, appData.streak >= 7,
+    false, false,  // water/exercise badges need more data
+    false, false, false, false
+  ];
+  badges.forEach((unlocked, i) => {
+    const el = document.getElementById('badge-' + i);
+    if (unlocked) el.classList.remove('locked');
+    else el.classList.add('locked');
+  });
+
+  // Water challenge
+  let waterDays = 0;
+  const today = new Date();
+  for (let i = 0; i < 21; i++) {
+    const d = new Date(today); d.setDate(d.getDate() - i);
+    const dLog = appData.logs[dateStr(d)];
+    if (dLog) {
+      // 兼容 waterEntries 数组格式和旧 water 数字格式
+      const wEntries = dLog.waterEntries || [];
+      const wTotal = wEntries.length > 0 ? wEntries.reduce((s, e) => s + (e.amount || 0), 0) : (dLog.water || 0);
+      if (wTotal >= 2000) waterDays++;
+    }
+  }
+  document.getElementById('challenge-water-fill').style.width = `${Math.round(waterDays/21*100)}%`;
+  document.getElementById('challenge-water-pct').textContent = `${waterDays}/21`;
+
+  // Exercise challenge (last 14 days)
+  let exDays = 0;
+  for (let i = 0; i < 14; i++) {
+    const d = new Date(today); d.setDate(d.getDate() - i);
+    if (appData.logs[dateStr(d)]?.exercise) exDays++;
+  }
+  document.getElementById('challenge-exercise-fill').style.width = `${Math.round(exDays/14*100)}%`;
+  document.getElementById('challenge-exercise-pct').textContent = `${exDays}/14`;
+
+  // Weekly strip
+  let wkEx = 0, wkCal = 0, wkDays = 0, totalWeightChange = 0, weightCount = 0;
+  let totalSleepMins = 0, sleepDays = 0;
+  for (let i = 0; i < 7; i++) {
+    const d = new Date(today); d.setDate(d.getDate() - i);
+    const log = appData.logs[dateStr(d)];
+    if (log) {
+      wkDays++;
+      if (log.exercise) wkEx++;
+      // 体重变化：用 weightEntries 第一条（兼容旧 weight 字段）
+      const wVal = log.weightEntries?.[0]?.value ?? log.weight;
+      if (wVal && i > 0) {
+        const prevD = new Date(d.getTime() - 86400000);
+        const prevLog = appData.logs[dateStr(prevD)];
+        const prevVal = prevLog?.weightEntries?.[0]?.value ?? prevLog?.weight;
+        if (prevVal) { totalWeightChange += wVal - prevVal; weightCount++; }
+      }
+      // 睡眠时长：当天 wake_time − 前一天 sleep_time
+      if (log.wake_time) {
+        const prevD = new Date(d.getTime() - 86400000);
+        const prevLog = appData.logs[dateStr(prevD)];
+        if (prevLog?.sleep_time) {
+          const [sh, sm] = prevLog.sleep_time.split(':').map(Number);
+          const [wh, wm] = log.wake_time.split(':').map(Number);
+          let mins = (wh * 60 + wm) - (sh * 60 + sm);
+          if (mins < 0) mins += 24 * 60;
+          if (mins > 0 && mins < 720) { totalSleepMins += mins; sleepDays++; }
+        }
+      }
+    }
+  }
+  document.getElementById('wk-exercise').textContent = wkEx;
+  document.getElementById('wk-sleep').textContent = sleepDays > 0 ? (totalSleepMins / sleepDays / 60).toFixed(1) : '--';
+  document.getElementById('wk-weight').textContent = weightCount > 0 ? totalWeightChange.toFixed(1) : '--';
+  document.getElementById('wk-checkin').textContent = `${wkDays}/7`;
+
+  // Heatmap
+  const hmGrid = document.getElementById('heatmap-grid');
+  hmGrid.innerHTML = '';
+  for (let i = 27; i >= 0; i--) {
+    const d = new Date(today); d.setDate(d.getDate() - i);
+    const key = dateStr(d);
+    const log = appData.logs[key];
+    let level = 0;
+    if (log) {
+    const score = (log.meals?.length||0) + (log.exercise?1:0) + ((() => { const we = log.waterEntries||[]; const wt = we.length>0?we.reduce((s,e)=>s+(e.amount||0),0):(log.water||0); return wt>=2000?1:0; })()) + (log.bowel?1:0);
+    if (score >= 4) level = 4; else if (score >= 3) level = 3; else if (score >= 2) level = 2; else if (score >= 1) level = 1;
+    }
+    const isToday = i === 0;
+    hmGrid.innerHTML += `<div class="heatmap-cell hm-${level} ${isToday?'hm-today':''}"></div>`;
+  }
+}
+
+// ═══════════════════════════════════════════════════════
+// CHAT (AI simulation)
+// ═══════════════════════════════════════════════════════
+let conversationHistory = [];
+let isLoading = false;
+
+function buildSystemPrompt() {
+  const u = appData.user;
+  const tagStr = (u.restrictions?.tags?.length ? u.restrictions.tags.join('、') : '低脂低碘护胃');
+  const prohib = u.restrictions?.prohibitions || '海带/紫菜/辛辣/油炸/咖啡/浓茶';
+  return `【身份】你是"小草"，温暖鼓励型中文健康助手，帮助用户完成每日健康打卡。
+【用户档案】减脂中（${u.startWeight}kg→${u.goalWeight}kg），每日热量预算${u.dailyCalGoal}kcal，饮食限制：${tagStr}，禁忌：${prohib}，运动：每天7:30慢跑3-5km。
+【运动记录格式】必须包含以下字段：运动时间（如07:30）、运动类型（如慢跑）、运动时长（如40分钟）、平均配速（如9'30"/km）、平均心率（如145bpm）、运动消耗（如280kcal）。
+【睡眠记录格式】记录起床时间和睡觉时间两个字段：wake_time（起床时间，如"07:00"）和 sleep_time（睡觉时间，如"23:00"）。睡眠时长通过当天起床时间减去前一天的睡觉时间自动计算。
+【饮水记录格式】每次饮水只记录一条，使用 water（饮水量，单位ml）和 water_time（具体时间，如16:22）。不要拆分多条，不要捏造时间，严格按照用户描述的时间记录。
+【体重记录格式】只记录早晨空腹体重。体重字段统一用 weight（数值，单位kg）和 time（记录时间）。如果是下午或晚上的体重询问，只需回复用户当前时间点的体重，不记入日志。
+【时间默认值规则】当用户提到"早上/早餐"时默认时间06:00-09:00，"中午/午餐"默认11:00-13:00，"晚上/晚餐"默认17:00-19:00，"加餐"默认14:00-16:00，"夜宵"默认21:00-23:00。未提及具体时间时自动使用当前时钟时间。
+【强制格式要求】回复末尾必须用【】包裹JSON对象，不得使用markdown代码块，不得省略【】。格式：【{"type":"record","data":{...}}】或【{"type":"question","question":"...","answer":"...","reason":"...","替代建议":"..."}】`;
+}
+
+// ─── API 配置 ────────────────────────────────────────────────────
+// Qwen3-VL-Plus 支持图片理解，API 兼容 OpenAI 格式
+const API_URL = (location.hostname === 'localhost' || location.hostname === '127.0.0.1')
+  ? '/v1/chat/completions'          // 本地：server.js 代理
+  : 'https://tc-paperhub.diezhi.net/v1/chat/completions'; // 远程：直连（可能跨域受限）
+const MODEL_NAME = 'qwen3-vl-plus';
+const API_KEY = 'sk-GAY-dlys5gibHWJReSrw6DOdmNthxVAQyGxpb8DLDYXB9ZEQ';
+let selectedImageData = null; // 存储待发送的图片 base64
+
+async function callAI(content) {
+  const recentHistory = conversationHistory.slice(-20);
+  const messages = [
+    { role: 'system', content: buildSystemPrompt() },
+    ...recentHistory,
+    { role: 'user', content: content }
+  ];
+
+  const response = await fetch(API_URL, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${API_KEY}`
+    },
+    body: JSON.stringify({
+      model: MODEL_NAME,
+      messages: messages,
+      max_tokens: 1024
+    })
+  });
+
+  if (!response.ok) {
+    const err = await response.json().catch(() => ({}));
+    throw new Error(err.error?.message || `请求失败 (${response.status})`);
+  }
+
+  const data = await response.json();
+  const respContent = data.choices?.[0]?.message?.content;
+  if (!respContent) throw new Error('AI返回内容为空');
+  return respContent;
+}
+
+function parseAIResponse(text) {
+  // 去掉 markdown 代码块 + 中文引号转标准引号
+  const cleaned = text.replace(/```json\s*/g, '').replace(/```\s*/g, '').replace(/"/g, '"').replace(/"/g, '"').trim();
+  // 匹配【...】包裹的 JSON（非贪婪）
+  const match = cleaned.match(/【([\s\S]+?)】/);
+  if (match) {
+    try {
+      const jsonStr = match[1].trim().replace(/([{,]\s*)([^{:,\s"']+?)\s*:/g, '$1"$2":');
+      const json = JSON.parse(jsonStr);
+      const displayText = cleaned.replace(/【[\s\S]+?】/, '').trim();
+      return { displayText, structuredData: json };
+    } catch {
+      // 最后尝试：把整个 match[1] 当作可能有问题的 JSON 修复
+      try {
+        const raw = match[1].replace(/'/g, '"');
+        const json = JSON.parse(raw);
+        const displayText = cleaned.replace(/【[\s\S]+?】/, '').trim();
+        return { displayText, structuredData: json };
+      } catch { return { displayText: text, structuredData: null }; }
+    }
+  }
+  // 没有【】的话，尝试直接找 JSON 对象
+  const jsonMatch = cleaned.match(/\{[\s\S]+?"type"[\s\S]+?\}/);
+  if (jsonMatch) {
+    try {
+      const jsonStr = jsonMatch[0].replace(/([{,]\s*)([^{:,\s"']+?)\s*:/g, '$1"$2":');
+      const json = JSON.parse(jsonStr);
+      const displayText = cleaned.replace(jsonMatch[0], '').trim();
+      return { displayText, structuredData: json };
+    } catch { return { displayText: text, structuredData: null }; }
+  }
+  return { displayText: text, structuredData: null };
+}
+
+function formatTime() {
+  const now = new Date();
+  return `${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`;
+}
+
+function escapeHtml(str) {
+  if (!str) return '';
+  return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/\n/g,'<br>');
+}
+
+function addUserBubble(text, imageData) {
+  const msgs = document.getElementById('messagesArea');
+  const div = document.createElement('div');
+  div.className = 'msg-user';
+  let imgHtml = '';
+  if (imageData) imgHtml = `<img src="${imageData}" style="max-width:200px;border-radius:12px;margin-bottom:6px;display:block" />`;
+  div.innerHTML = `<div class="bubble-user">${imgHtml}${escapeHtml(text)}<div class="time">${formatTime()}</div></div>`;
+  msgs.appendChild(div);
+  msgs.scrollTop = msgs.scrollHeight;
+}
+
+function addAIBubble(text, structuredData) {
+  // 过滤 AI 回复中的自我推理说明句（如"从我告诉她的信息得出"）
+  const cleaned = text
+    .replace(/根据[您我]告诉?[^。]*[，,]?推?算|根据[您我]的描述[，,]?推?算|根据[您我]提供的信息[，,]?推?算|从[您我]告诉?她的信息[，,]?得出|根据[您我]刚才[说描述告诉]的[，,]?我[推算出得出]|根据[您我]的[说描述记录][，,]?我[推算出得出]|根据[您我]告诉?.*?信息[，,]?(?:我)?(?:推?算|得出|判断)|从[您我]的(?:刚才)?(?:描述|记录|信息)[，,]?(?:我)?(?:推?算|得出)[^。]*。?/g, '')
+    // 过滤 AI 的评价/总结句（以数字+量词开头，或含"规律/合理/良好/正常/健康/反映"等评价词）
+    .replace(/^[一二三四五六七八九十百\d]+(?:次|条|个)[，,\s]*[^(（]*(?:规律|合理|良好|正常|健康|反映|说明|表明|显示|总体|整体)[^。]*。?/gm, '')
+    .replace(/^(?:两次|三次|四次|五次|[三四五六七八九十]次)[，,\s]*[^(（]*(?:规律|合理|良好|正常|健康|反映|说明|表明|显示)[^。]*。?/gm, '')
+    .replace(/^[，。、\s]+|[，。、\s]+$/g)
+    .trim();
+  const msgs = document.getElementById('messagesArea');
+  if (structuredData && structuredData.type === 'record' && structuredData.data) {
+    const card = buildConfirmCard(structuredData.data);
+    const bubble = document.createElement('div');
+    bubble.className = 'msg-ai';
+    bubble.innerHTML = `<div class="msg-ai-avatar">🌿</div><div><div class="record-confirm">${card}</div>${cleaned ? `<div class="bubble-ai" style="margin-top:6px;border-radius:4px 18px 18px 4px">${escapeHtml(cleaned)}<div class="time">${formatTime()}</div></div>` : ''}</div>`;
+    msgs.appendChild(bubble);
+    msgs.scrollTop = msgs.scrollHeight;
+    return;
+  }
+  const div = document.createElement('div');
+  div.className = 'msg-ai';
+  div.innerHTML = `<div class="msg-ai-avatar">🌿</div><div class="bubble-ai">${escapeHtml(text)}<div class="time">${formatTime()}</div></div>`;
+  msgs.appendChild(div);
+  msgs.scrollTop = msgs.scrollHeight;
+}
+
+function buildConfirmCard(data) {
+  // 自动判断记录类型
+  const keys = Object.keys(data);
+  let category = '健康记录';
+  if (keys.some(k => k.includes('运动') || k.includes('跑步') || k.includes('跑'))) category = '运动记录';
+  else if (keys.some(k => k.includes('饮食') || k.includes('吃') || k.includes('餐') || k.includes('食物'))) category = '饮食记录';
+  else if (keys.some(k => k.includes('水') || k.includes('喝'))) category = '饮水记录';
+  else if (keys.some(k => k.includes('体重'))) category = '体重记录';
+  else if (keys.some(k => k.includes('排便') || k === 'bowel')) category = '排便记录';
+  else if (keys.some(k => k.includes('睡眠') || k.includes('睡觉') || k.includes('起床') || k === 'sleep' || k === 'wake' || k === 'sleep_time' || k === 'wake_time')) category = '睡眠记录';
+
+  // 字段名美化映射（包含 water_time）
+  const labelMap = {
+    '运动时间': '运动时间', '运动类型': '运动类型', '运动强度': '运动强度', '运动时长': '运动时长', '运动里程': '运动里程',
+    '平均配速': '平均配速', '平均心率': '平均心率', '运动消耗': '运动消耗', '消耗': '运动消耗', '卡路里消耗': '运动消耗',
+    'meal': '餐次', 'meal_type': '餐次', 'meal_time': '用餐时间', 'items': '食物', 'food_items': '食物', 'food_list': '食物', 'foods': '食物', 'food': '食物', 'name': '食物', 'cal': '热量', 'kcal': '热量', 'calories': '热量', '卡路里': '热量', 'total': '总热量', 'total_calories': '总热量',
+    'water': '饮水量', 'water_time': '饮水时间', 'weight': '体重', 'current_weight': '当前体重', 'body_weight': '体重', '体重': '体重', 'time': '时间', 'distance': '距离', 'duration': '时长', 'type': '类型',
+    'exercise': '运动', 'sleep': '睡眠', 'bed': '入睡', 'wake': '起床', 'hours': '时长',
+    'wake_time': '起床时间', 'sleep_time': '睡觉时间', '起床时间': '起床时间', '睡觉时间': '睡觉时间',
+    'bowel': '排便', '排便': '排便', 'event': '事项', 'times': '时间', 'count': '次数', 'note': '备注', 'pace': '配速', 'heart_rate': '心率', ' calories': '热量', 'bowel_movements': '排便记录',
+    'protein': '蛋白质', 'total_protein': '蛋白质', 'carbs': '碳水', 'total_carbs': '碳水', 'fat': '脂肪', 'total_fat': '脂肪'
+  };
+
+  // 特殊格式化：水记录显示为 "500ml"（时间在单独的 water_time 行显示）
+  function formatValue(key, value) {
+    if (key === 'water' && value > 0) {
+      return `${value}`;  // 单位 ml 在右侧总计栏显示
+    }
+    if ((key === 'weight' || key === 'current_weight' || key === 'body_weight' || key === '体重') && (typeof value === 'number' || !isNaN(parseFloat(value)))) {
+      return `${parseFloat(value)} kg`;
+    }
+    if (key === 'bowel' || key === '排便') {
+      if (typeof value === 'boolean') return value ? '正常' : '无';
+      if (typeof value === 'object' && value !== null) {
+        // 对象格式：{times:[...], count:N, note:'...'} 之类，不在这里格式化（由 times/count/note 字段各自处理）
+        return null; // 跳过，让子字段各自显示
+      }
+      return value ? '正常' : '无';
+    }
+    if (key === 'times' && Array.isArray(value)) {
+      return value.map(t => t.time || JSON.stringify(t)).join('、');
+    }
+    // 兼容 times 是字符串的情况（如 AI 返回 "06:30、15:30"）
+    if (key === 'times' && typeof value === 'string' && value.includes(':')) {
+      return value;  // 直接显示，如 "06:30、15:30"
+    }
+    if (key === 'bowel_movements' && Array.isArray(value)) {
+      // 兼容元素是字符串（如 "06:30"）或对象（如 {time:"06:30"}）两种情况
+      return value.map((m, i) => {
+        const t = typeof m === 'string' ? m : (m.time || '?');
+        return `${t}（第${i+1}次）`;
+      }).join('、');
+    }
+    if (key === 'items' && Array.isArray(value)) {
+      return value.map(item => `${item.name || item.food || '未知食物'}${item.weight ? ' · ' + item.weight : (item.amount ? ' · ' + item.amount : '')}`).join('<br>');
+    }
+    if ((key === 'food_items' || key === 'food_list' || key === 'foods') && Array.isArray(value)) {
+      // 每行只显示食物名+重量（热量在右侧总计栏显示）
+      return value.map(item => `${item.name || '未知食物'}${item.weight ? ' · ' + item.weight : (item.amount ? ' · ' + item.amount : '')}`).join('<br>');
+    }
+    if (key === 'meal' || key === 'meal_type') {
+      const mealMap = { 'breakfast': '早餐', 'lunch': '午餐', 'dinner': '晚餐', 'breakfast_snack': '早加餐', 'lunch_snack': '午加餐', 'dinner_snack': '晚加餐', 'night_snack': '夜宵' };
+      return mealMap[value] || value;
+    }
+    if ((key === 'total' || key === 'total_calories') && typeof value === 'number') {
+      return `${value} kcal`;
+    }
+    if (typeof value === 'object') return JSON.stringify(value);
+    return String(value);
+  }
+
+  let rows = '';
+  for (const [key, value] of Object.entries(data)) {
+    if (key === 'type' || key === 'question' || key === 'answer' || key === 'reason' || key === '替代建议' || key === 'waterEntries') continue;
+    // 过滤营养细项（蛋白质/脂肪/碳水等，不单独显示）
+    if (['蛋白质', '脂肪', '碳水', 'protein', 'fat', 'carbs', 'carb'].includes(key)) continue;
+    // event=排便/排便记录 跳过（卡片标题已显示类别）
+    if ((key === 'event' || key === 'type') && (value === '排便' || value === '排便记录' || value === '运动' || value === '饮食' || value === '饮水' || value === '睡眠' || value === '体重')) continue;
+    if (value === null || value === undefined || value === '') continue;
+    const label = labelMap[key] || key;
+    const displayValue = formatValue(key, value);
+    if (displayValue === null) continue;
+    // items/food_items/food_list/foods 包含<br>，用 innerHTML；其他用文本节点
+    const isHtml = (key === 'items' || key === 'food_items' || key === 'food_list' || key === 'foods') && Array.isArray(value);
+    rows += `<div class="confirm-row"><span class="confirm-label">${label}</span><span class="confirm-value">${isHtml ? displayValue : escapeHtml(displayValue)}</span></div>`;
+  }
+
+  if (!rows) return '';
+  // 将 data 序列化到确认卡片上（用于 confirmRecord 直接读取，避免文本解析）
+  // 用 encodeURIComponent 避免 HTML 属性中的单引号/双引号问题
+  const dataJson = encodeURIComponent(JSON.stringify(data));
+  return `<div class="record-confirm" data-record="${dataJson}"><div class="record-confirm-header">✦ ${category}</div><div class="record-confirm-body">${rows}</div><div class="confirm-actions"><button class="btn-confirm" onclick="confirmRecord(this)">确认录入</button><button class="btn-edit" onclick="editRecord(this)">调整</button></div></div>`;
+}
+
+// 调整按钮：直接在卡片上编辑字段
+function editRecord(btn) {
+  const card = btn.closest('.record-confirm');
+  let data;
+  try {
+    data = JSON.parse(decodeURIComponent(card.getAttribute('data-record')));
+  } catch { showToast('数据读取失败', 2000); return; }
+
+  // 需要编辑的字段（排除 meta 字段和类别标记字段）
+  const skipKeys = ['type', 'question', 'answer', 'reason', '替代建议', 'waterEntries', 'event'];
+  const labelMap = {
+    '运动时间': '运动时间', '运动类型': '运动类型', '运动强度': '运动强度', '运动时长': '运动时长', '运动里程': '运动里程',
+    '平均配速': '平均配速', '平均心率': '平均心率', '运动消耗': '运动消耗', '消耗': '运动消耗', '卡路里消耗': '运动消耗',
+    'meal': '餐次', 'meal_type': '餐次', 'meal_time': '用餐时间', 'items': '食物', 'food_items': '食物', 'food_list': '食物', 'foods': '食物', 'food': '食物', 'name': '食物', 'cal': '热量', 'kcal': '热量', 'calories': '热量', '卡路里': '热量', 'total': '总热量', 'total_calories': '总热量',
+    'water': '饮水量', 'water_time': '饮水时间', 'weight': '体重', 'current_weight': '当前体重', 'body_weight': '体重', '体重': '体重', 'time': '时间', 'distance': '距离', 'duration': '时长', 'type': '类型',
+    'exercise': '运动', 'sleep': '睡眠', 'bed': '入睡', 'wake': '起床', 'hours': '时长',
+    'bowel': '排便', '排便': '排便', 'times': '排便时间', 'count': '次数', 'note': '备注', 'bowel_movements': '排便记录', 'sleep_time': '睡觉时间', 'wake_time': '起床时间', '起床时间': '起床时间', '睡觉时间': '睡觉时间', 'pace': '配速', 'heart_rate': '心率',
+    'protein': '蛋白质', 'total_protein': '蛋白质', 'carbs': '碳水', 'total_carbs': '碳水', 'fat': '脂肪', 'total_fat': '脂肪'
+  };
+
+  // 数字型字段
+  const numberKeys = ['运动时长', '运动消耗', '运动里程', '平均配速', '平均心率', 'cal', 'kcal', 'weight', 'distance', 'duration', 'heart_rate', 'hours', 'water'];
+  // 时间型字段
+  const timeKeys = ['运动时间', 'water_time', 'bed', 'wake', 'wake_time', 'sleep_time', '起床时间', '睡觉时间'];
+
+  let editHtml = '';
+  for (const [key, value] of Object.entries(data)) {
+    if (skipKeys.includes(key) || value === null || value === undefined || value === '') continue;
+    const label = labelMap[key] || key;
+    const isNum = numberKeys.includes(key);
+    const isTime = timeKeys.includes(key);
+    const inputType = isTime ? 'time' : isNum ? 'number' : 'text';
+    const inputValue = isTime ? value : (isNum ? String(value).replace(/[^\d.]/g, '') : String(value));
+    editHtml += `<div class="confirm-row"><span class="confirm-label">${label}</span><input class="edit-input" data-key="${key}" type="${inputType}" value="${escapeHtml(inputValue)}" /></div>`;
+  }
+
+  card.querySelector('.record-confirm-body').innerHTML = editHtml;
+  card.querySelector('.confirm-actions').innerHTML =
+    `<button class="btn-confirm" onclick="saveEdit(this)">保存</button><button class="btn-edit" onclick="cancelEdit(this)">取消</button>`;
+}
+
+// 保存编辑结果
+function saveEdit(btn) {
+  const card = btn.closest('.record-confirm');
+  const inputs = card.querySelectorAll('.edit-input');
+  let data;
+  try {
+    data = JSON.parse(decodeURIComponent(card.getAttribute('data-record')));
+  } catch { showToast('数据读取失败', 2000); return; }
+
+  inputs.forEach(input => {
+    const key = input.dataset.key;
+    let val = input.value.trim();
+    // 数字字段转换
+    const numberKeys = ['运动时长', '运动消耗', '运动里程', '平均心率', 'cal', 'kcal', 'weight', 'distance', 'duration', 'heart_rate', 'hours', 'water'];
+    const timeKeys = ['运动时间', 'water_time', 'bed', 'wake', 'wake_time', 'sleep_time', '起床时间', '睡觉时间'];
+    if (numberKeys.includes(key)) {
+      val = parseFloat(val) || 0;
+    } else if (!timeKeys.includes(key) && !isNaN(parseFloat(val)) && key !== '平均配速') {
+      // 其他数字但不是配速
+    }
+    data[key] = val;
+  });
+
+  // 更新 data-record
+  card.setAttribute('data-record', escapeHtml(JSON.stringify(data)));
+  // 重新渲染卡片
+  const newCard = buildConfirmCard(data);
+  const wrapper = card.closest('.msg-ai');
+  if (wrapper) {
+    wrapper.querySelector('.record-confirm').outerHTML = newCard;
+  }
+  showToast('已更新', 1500);
+}
+
+// 取消编辑
+function cancelEdit(btn) {
+  const card = btn.closest('.record-confirm');
+  let data;
+  try {
+    data = JSON.parse(decodeURIComponent(card.getAttribute('data-record')));
+  } catch { return; }
+  const newCard = buildConfirmCard(data);
+  const wrapper = card.closest('.msg-ai');
+  if (wrapper) {
+    wrapper.querySelector('.record-confirm').outerHTML = newCard;
+  }
+}
+
+function showTyping() {
+  const msgs = document.getElementById('messagesArea');
+  const div = document.createElement('div');
+  div.className = 'typing-indicator';
+  div.id = 'typingEl';
+  div.innerHTML = `<div class="msg-ai-avatar">🌿</div><div class="typing-dots"><span></span><span></span><span></span></div>`;
+  msgs.appendChild(div);
+  msgs.scrollTop = msgs.scrollHeight;
+}
+function hideTyping() { const el = document.getElementById('typingEl'); if (el) el.remove(); }
+
+function saveRecordToData(data) {
+  const today = todayStr();
+  if (!appData.logs[today]) appData.logs[today] = { meals: [], exercise: null, waterEntries: [], bowel: undefined, weightEntries: [], sleep: null, wake_time: null, sleep_time: null };
+
+  // 兼容旧数据格式：weight 是数字（不带时间）
+  if (typeof appData.logs[today].weight === 'number' && (!appData.logs[today].weightEntries || appData.logs[today].weightEntries.length === 0)) {
+    appData.logs[today].weightEntries = appData.logs[today].weight > 0 ? [{ time: '07:00', value: appData.logs[today].weight }] : [];
+    appData.logs[today].weight = undefined;
+  }
+
+  // 兼容旧数据格式：water 是数字（不带时间）
+  if (typeof appData.logs[today].water === 'number' && !appData.logs[today].waterEntries) {
+    appData.logs[today].waterEntries = appData.logs[today].water > 0 ? [{ time: '00:00', amount: appData.logs[today].water }] : [];
+    appData.logs[today].water = undefined;
+  }
+
+  if ((data.meal || data.meal_type) && (data.items || data.food_items || data.food_list || data.foods)) {
+    if (!Array.isArray(appData.logs[today].meals)) {
+      appData.logs[today].meals = [];
+    }
+    const mealTime = data.meal_time || formatTime();
+    const items = data.foods || data.food_list || data.food_items || data.items;
+    items.forEach(item => {
+      appData.logs[today].meals.push({
+        name: item.name || item.food || '未知食物',
+        cal: item.calories || item.cal || item.kcal || 0,
+        amount: item.weight || item.amount || '',
+        time: item.time || mealTime
+      });
+    });
+  }
+  // 运动记录：支持 data.exercise（嵌套格式）和扁平中文字段名格式
+  const hasFlatExercise = data.运动时间 || data.运动类型 || data.运动时长 || data.运动消耗 || data.distance || data.duration;
+  if (data.exercise) {
+    appData.logs[today].exercise = data.exercise;
+    appData.user.currentWeight = data.weight || appData.user.currentWeight;
+  } else if (hasFlatExercise) {
+    // AI 返回扁平中文字段名格式（如：运动时间、运动类型、运动时长）
+    const ex = appData.logs[today].exercise || {};
+    if (data.运动时间) ex.time = data.运动时间;
+    if (data.运动类型) ex.type = data.运动类型;
+    if (data.运动时长) ex.duration = parseInt(String(data.运动时长).replace(/[^\d]/g, '')) || data.运动时长;
+    if (data.运动里程 || data.distance) ex.distance = parseFloat(String(data.运动里程 || data.distance).replace(/[^\d.]/g, '')) || (data.运动里程 || data.distance);
+    if (data.运动消耗 || data.消耗 || data.cal || data.kcal) ex.cal = parseInt(String(data.运动消耗 || data.消耗 || data.cal || data.kcal).replace(/[^\d]/g, ''));
+    if (data.平均配速 || data.pace) ex.pace = data.平均配速 || data.pace;
+    if (data.平均心率 || data.heart_rate) ex.heart_rate = parseInt(String(data.平均心率 || data.heart_rate).replace(/[^\d]/g, ''));
+    appData.logs[today].exercise = ex;
+    if (data.weight) {
+      appData.logs[today].weight = data.weight;
+      appData.user.currentWeight = data.weight;
+    }
+  }
+  if (data.water || data.waterEntries) {
+    // 新格式：直接用 waterEntries 数组（每条含 time + amount）
+    if (!Array.isArray(appData.logs[today].waterEntries)) {
+      appData.logs[today].waterEntries = [];
+    }
+    if (data.waterEntries && Array.isArray(data.waterEntries)) {
+      data.waterEntries.forEach(entry => {
+        if (entry.amount > 0) {
+          appData.logs[today].waterEntries.push({ time: entry.time || '00:00', amount: entry.amount });
+        }
+      });
+    } else if (data.water > 0) {
+      // 旧格式兼容：只有 water 没有 time，用当前时间
+      const t = data.water_time || formatTime();
+      appData.logs[today].waterEntries.push({ time: t, amount: data.water });
+    }
+  }
+  // 体重：支持 weight / current_weight / body_weight / 体重（存到 weightEntries 数组）
+  const rawWeight = data.weight ?? data.current_weight ?? data.body_weight ?? data.体重;
+  const weightVal = typeof rawWeight === 'number' ? rawWeight : parseFloat(String(rawWeight).replace(/[^\d.]/g, ''));
+  const weightTime = data.time || data.weight_time || '07:00';
+  if (weightVal !== undefined && weightVal !== null && !isNaN(weightVal)) {
+    if (!Array.isArray(appData.logs[today].weightEntries)) {
+      appData.logs[today].weightEntries = [];
+    }
+    appData.logs[today].weightEntries.push({ time: weightTime, value: weightVal });
+    // 仪表盘和体重曲线只用第一条（早晨空腹体重）
+    if (appData.logs[today].weightEntries.length === 1) {
+      appData.user.currentWeight = weightVal;
+    }
+  }
+  // 睡眠：支持 wake_time / sleep_time / 起床时间 / 睡觉时间（跨天计算时长）
+  // wake_time 存在今天，sleep_time 存在昨天（昨晚的睡眠属于前一天）
+  const wakeTime = data.wake_time || data.起床时间 || null;
+  const sleepTime = data.sleep_time || data.睡觉时间 || null;
+  if (wakeTime !== null) appData.logs[today].wake_time = wakeTime;
+  if (sleepTime !== null) {
+    // sleep_time 存到昨天的日志（跨天：5月24日睡→存在5月24日，5月25日起床→存在5月25日）
+    const yesterday = new Date(); yesterday.setDate(yesterday.getDate() - 1);
+    const yesterdayKey = dateStr(yesterday);
+    if (!appData.logs[yesterdayKey]) {
+      appData.logs[yesterdayKey] = { meals: [], exercise: null, waterEntries: [], bowel: undefined, weightEntries: [], sleep: null, wake_time: null, sleep_time: null };
+    }
+    appData.logs[yesterdayKey].sleep_time = sleepTime;
+  }
+
+  if (data.bowel !== undefined) {
+    appData.logs[today].bowel = data.bowel;
+  } else if (data.排便 !== undefined) {
+    appData.logs[today].bowel = data.排便;
+  } else if (data.event === '排便' || data.event === '排便记录') {
+    appData.logs[today].bowel = {
+      count: data.count || (data.times ? data.times.length : 1),
+      times: data.times || [],
+      note: data.note || ''
+    };
+  } else if (data.bowel_movements && Array.isArray(data.bowel_movements)) {
+    // 兼容 bowel_movements 格式
+    appData.logs[today].bowel = {
+      count: data.bowel_movements.length,
+      times: data.bowel_movements.map(m => ({ time: m.time })),
+      note: data.note || ''
+    };
+  }
+
+  // Update streak
+  if (appData.lastCheckin !== today) {
+    const yesterday = new Date(); yesterday.setDate(yesterday.getDate()-1);
+    if (appData.lastCheckin === dateStr(yesterday)) {
+      appData.streak++;
+    } else if (appData.lastCheckin !== today) {
+      appData.streak = 1;
+    }
+    appData.bestStreak = Math.max(appData.bestStreak, appData.streak);
+    appData.lastCheckin = today;
+  }
+
+  saveData(appData);
+}
+
+function confirmRecord(btn) {
+  const card = btn.closest('.record-confirm');
+  // 从 data-record 属性直接读取结构化数据，不再依赖文本解析
+  let data;
+  try {
+    const raw = decodeURIComponent(card.getAttribute('data-record'));
+    data = JSON.parse(raw);
+  } catch {
+    // 回退：用旧方法从文本提取（兼容性）
+    const raw = card.querySelector('.record-confirm-body').textContent;
+    const weightMatch = raw.match(/(\d+\.?\d*)\s*kg/);
+    const waterMatch = raw.match(/(\d+)\s*ml/);
+    data = {};
+    if (weightMatch) data.weight = parseFloat(weightMatch[1]);
+    if (waterMatch) data.water = parseInt(waterMatch[1]);
+  }
+  saveRecordToData(data);
+  card.querySelector('.confirm-actions').innerHTML = '<div style="padding:8px 14px 10px;text-align:center;color:var(--green-600);font-size:13px;font-weight:600;">✅ 已录入！</div>';
+  showToast('已保存到今日记录', 2000);
+  refreshDashboard();
+}
+
+async function sendMessage() {
+  if (isLoading) return;
+  const input = document.getElementById('messageInput');
+  const text = input.value.trim();
+  if (!text && !selectedImageData) return;
+
+  isLoading = true;
+  document.getElementById('sendBtn').disabled = true;
+
+  // 构建用户消息内容（文字+可选图片）
+  let userContent;
+  if (selectedImageData) {
+    userContent = [
+      { type: 'text', text: text || '请分析这张图片' },
+      { type: 'image_url', image_url: { url: selectedImageData } }
+    ];
+  } else {
+    userContent = text;
+  }
+
+  input.value = '';
+  addUserBubble(text, selectedImageData);
+
+  const historyContent = selectedImageData
+    ? [{ type: 'text', text: text || '请分析这张图片' }, { type: 'image_url', image_url: { url: selectedImageData } }]
+    : text;
+  conversationHistory.push({ role: 'user', content: historyContent });
+  selectedImageData = null;
+  document.getElementById('imgInput').value = '';
+  showTyping();
+
+  try {
+    const aiText = await callAI(historyContent);
+    hideTyping();
+    conversationHistory.push({ role: 'assistant', content: aiText });
+    const { displayText, structuredData } = parseAIResponse(aiText);
+    addAIBubble(displayText, structuredData);
+  } catch (err) {
+    hideTyping();
+    showToast(err.message, 4000);
+    conversationHistory.pop();
+  } finally {
+    isLoading = false;
+    document.getElementById('sendBtn').disabled = false;
+    document.getElementById('messageInput').focus();
+  }
+}
+
+function handleImgSelect(input) {
+  const file = input.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    selectedImageData = e.target.result; // base64 data URL
+    showToast('图片已选择，发送消息即可分析', 2000);
+  };
+  reader.readAsDataURL(file);
+}
+
+function handleKeyDown(e) { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); } }
+function sendQuickReply(el) { const text = el.textContent.replace(/^[^\s]+\s/, ''); document.getElementById('messageInput').value = text; sendMessage(); }
+
+function clearChat() {
+  if (!confirm('确定清空当前对话？')) return;
+  conversationHistory = [];
+  const msgs = document.getElementById('messagesArea');
+  msgs.innerHTML = '';
+  const div = document.createElement('div');
+  div.className = 'date-divider';
+  div.id = 'chat-date-divider';
+  const now = new Date();
+  div.textContent = `今天 · ${now.getFullYear()}年${now.getMonth()+1}月${now.getDate()}日`;
+  msgs.appendChild(div);
+  showToast('对话已清空', 1500);
+}
+
+function showToast(msg, duration = 3000) {
+  const toast = document.getElementById('toast');
+  toast.textContent = msg;
+  toast.classList.add('show');
+  setTimeout(() => toast.classList.remove('show'), duration);
+}
+
+// ─── 历史数据导入 ────────────────────────────────────────────────────
+async function importHistoryData() {
+  const btn = document.getElementById('import-btn');
+  const status = document.getElementById('import-status');
+  status.textContent = '...'; status.style.color = 'var(--text-mid)';
+  
+  try {
+    const resp = await fetch('/import_data.json?' + Date.now());
+    if (!resp.ok) throw new Error('找不到数据文件');
+    const imported = await resp.json();
+    
+    const existing = JSON.parse(localStorage.getItem('health_diary_data') || '{}');
+    existing.logs = existing.logs || {};
+    
+    let merged = 0, skipped = 0;
+    for (const [date, data] of Object.entries(imported.logs)) {
+      if (!existing.logs[date] || (existing.logs[date].meals || []).length === 0) {
+        existing.logs[date] = data;
+        merged++;
+      } else {
+        skipped++;
+      }
+    }
+    
+    localStorage.setItem('health_diary_data', JSON.stringify(existing));
+    appData = JSON.parse(localStorage.getItem('health_diary_data'));
+    refreshDashboard();
+    refreshAchievements();
+    
+    status.textContent = `✅ ${merged}天`;
+    status.style.color = 'var(--green-600)';
+    showToast(`已导入 ${merged} 天数据（跳过 ${skipped} 天已有数据）`, 3000);
+  } catch (e) {
+    status.textContent = '❌';
+    status.style.color = 'var(--red-600)';
+    showToast('导入失败: ' + e.message, 3000);
+  }
+}
+
+// Init
+refreshDashboard();
+refreshAchievements();
+
+// ─── 首次加载自动导入历史数据 ────────────────────────────────────
+(function autoImportIfEmpty() {
+  const raw = localStorage.getItem('health_diary_data');
+  let hasData = false;
+  if (raw) {
+    try { const obj = JSON.parse(raw); if (obj.logs && Object.keys(obj.logs).length > 0) hasData = true; }
+    catch(e) {}
+  }
+  if (hasData) return;
+
+  fetch('/import_data.json')
+    .then(r => { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
+    .then(imported => {
+      const existing = JSON.parse(localStorage.getItem('health_diary_data') || '{}');
+      existing.logs = imported.logs;
+      localStorage.setItem('health_diary_data', JSON.stringify(existing));
+      appData = existing;
+      refreshDashboard();
+      refreshAchievements();
+      showToast('已自动导入 14 天历史数据', 3000);
+    })
+    .catch(e => { console.error('Auto import failed:', e); });
+})();
+
+// Trend tabs
+document.querySelectorAll('.trend-tab').forEach(tab => {
+  tab.addEventListener('click', () => {
+    tab.closest('.trend-tabs').querySelectorAll('.trend-tab').forEach(t => t.classList.remove('active'));
+    tab.classList.add('active');
+  });
+});
+
+// Sleep Quick Entry Popup
+function showSleepPopup() {
+  const todayKey = todayStr();
+  const log = appData.logs[todayKey] || {};
+  // wake_time 存在今天；sleep_time（昨晚睡觉时间）存在昨天
+  const yesterday = new Date(); yesterday.setDate(yesterday.getDate() - 1);
+  const prevLog = appData.logs[dateStr(yesterday)] || {};
+  document.getElementById('sleep-wake-input').value = log.wake_time || '';
+  document.getElementById('sleep-sleep-input').value = prevLog.sleep_time || '';
+  document.getElementById('sleep-popup-overlay').classList.add('show');
+}
+function hideSleepPopup() {
+  document.getElementById('sleep-popup-overlay').classList.remove('show');
+}
+function saveSleepRecord() {
+  const wakeTime = document.getElementById('sleep-wake-input').value;
+  const sleepTime = document.getElementById('sleep-sleep-input').value;
+  const todayKey = todayStr();
+  if (!appData.logs[todayKey]) {
+    appData.logs[todayKey] = { meals: [], exercise: null, waterEntries: [], bowel: undefined, weightEntries: [], sleep: null, wake_time: null, sleep_time: null };
+  }
+  // wake_time → 存今天（今早起床）
+  if (wakeTime) appData.logs[todayKey].wake_time = wakeTime;
+  // sleep_time → 存昨天（昨晚睡觉，跨天）
+  if (sleepTime) {
+    const yesterday = new Date(); yesterday.setDate(yesterday.getDate() - 1);
+    const yesterdayKey = dateStr(yesterday);
+    if (!appData.logs[yesterdayKey]) {
+      appData.logs[yesterdayKey] = { meals: [], exercise: null, waterEntries: [], bowel: undefined, weightEntries: [], sleep: null, wake_time: null, sleep_time: null };
+    }
+    appData.logs[yesterdayKey].sleep_time = sleepTime;
+  }
+  if (appData.lastCheckin !== todayKey) {
+    const yesterday = new Date(); yesterday.setDate(yesterday.getDate()-1);
+    if (appData.lastCheckin === dateStr(yesterday)) {
+      appData.streak++;
+    } else {
+      appData.streak = 1;
+    }
+    appData.bestStreak = Math.max(appData.bestStreak, appData.streak);
+    appData.lastCheckin = todayKey;
+  }
+  saveData(appData);
+  hideSleepPopup();
+  refreshDashboard();
+  if (document.getElementById('page-records').classList.contains('active')) renderRecords();
+  showToast('睡眠已记录', 2000);
+}
+
+// Settings
+function renderSettings() {
+  const u = appData.user;
+  // Profile card
+  const nameEl = document.getElementById('settings-name');
+  const taglineEl = document.getElementById('settings-tagline');
+  const avatarEl = document.getElementById('profile-avatar');
+  if (nameEl) nameEl.textContent = u.name || '小林';
+  if (avatarEl) avatarEl.textContent = (u.name || '小').charAt(0);
+  if (taglineEl) taglineEl.textContent = `打卡 ${appData.streak || 0} 天 · ${u.goalType || '减脂'}目标`;
+
+  // 基础信息
+  setter('show-name', u.name || '小林');
+  setter('show-height', `${u.height || 165} cm`);
+  setter('show-currentWeight', `${u.currentWeight || u.startWeight || 75.4} kg`);
+  setter('show-age', `${u.age || 28} 岁`);
+  setter('show-activityLevel', u.activityLevel || '中等');
+
+  // 目标设置
+  setter('show-goalWeight', `${u.goalWeight || 65.0} kg`);
+  setter('show-goalDate', u.goalDate || '9月底');
+  // goal-type chips
+  document.querySelectorAll('#goal-type-chips .goal-chip').forEach(c => {
+    c.classList.toggle('active', c.dataset.val === (u.goalType || '减脂'));
+  });
+
+  // 健康状况
+  const tags = u.restrictions?.tags || [];
+  const pros = u.restrictions?.prohibitions || '';
+  const summaryEl = document.getElementById('show-restrictions-summary');
+  if (summaryEl) summaryEl.textContent = tags.length > 0 ? tags.join('、') : (pros ? pros : '无');
+  setter('show-allergies', u.allergies || '无');
+  setter('show-specialStatus', u.specialStatus || '无');
+
+  // AI 助手
+  setter('show-pushTime', u.pushTime || '22:30');
+  document.querySelectorAll('#ai-style-chips .style-chip').forEach(c => {
+    c.classList.toggle('active', c.dataset.val === (u.aiStyle || '鼓励型'));
+  });
+
+  // 通知 toggles
+  const n = u.notifications || {};
+  setToggle('dailySummary', n.dailySummary !== false);
+  setToggle('waterRemind', n.waterRemind !== false);
+  setToggle('exerciseRemind', n.exerciseRemind === true);
+
+  // 统计栏（BMI / 热量 / 基础代谢）
+  const h = u.height || 165;
+  const cw = u.currentWeight || u.startWeight || 75.4;
+  const bmi = h > 0 ? (cw / ((h/100)*(h/100))) : 0;
+  const bmr = Math.round(10 * cw + 6.25 * h - 5 * (u.age || 28) + (u.gender === '女' ? -161 : 5));
+  const tdeeMap = { '久坐': 1.2, '轻度': 1.375, '中等': 1.55, '活跃': 1.725, '高强度': 1.9 };
+  const tdee = Math.round(bmr * (tdeeMap[u.activityLevel] || 1.55));
+
+  const bmiEl = document.getElementById('stat-bmi');
+  const calEl = document.getElementById('stat-cal');
+  const bmrEl = document.getElementById('stat-bmr');
+  if (bmiEl) bmiEl.textContent = bmi.toFixed(1);
+  if (calEl) calEl.textContent = tdee.toLocaleString();
+  if (bmrEl) bmrEl.textContent = bmr.toLocaleString();
+}
+
+function setter(id, val) { const el = document.getElementById(id); if (el) el.textContent = val; }
+function setToggle(key, on) { const el = document.getElementById('toggle-' + key); if (el) el.classList.toggle('off', !on); }
+
+// ── Goal / AI chips ──
+function setGoalType(chip, val) {
+  document.querySelectorAll('#goal-type-chips .goal-chip').forEach(c => c.classList.remove('active'));
+  chip.classList.add('active');
+  appData.user.goalType = val;
+  saveData(appData);
+  renderSettings();
+}
+function setAiStyle(chip, val) {
+  document.querySelectorAll('#ai-style-chips .style-chip').forEach(c => c.classList.remove('active'));
+  chip.classList.add('active');
+  appData.user.aiStyle = val;
+  saveData(appData);
+}
+
+// ── Notification toggles ──
+function toggleNotify(key) {
+  const n = appData.user.notifications;
+  n[key] = !n[key];
+  saveData(appData);
+  setToggle(key, n[key]);
+  renderSettings();
+}
+
+// ── Generic Edit Popup ──
+let editPopupMeta = null;
+function openEditPopup(title, field, type, icon, currVal, unit, min, max) {
+  editPopupMeta = { field, type, unit: unit || '', min: min || '', max: max || '' };
+  const inp = document.getElementById('edit-popup-input');
+  document.getElementById('edit-popup-title').textContent = (icon||'') + ' ' + title;
+  const u = appData.user;
+  const val = (u[field] !== undefined && u[field] !== null) ? u[field] : currVal;
+  inp.value = val;
+  inp.type = type === 'number' ? 'number' : 'text';
+  if (min !== '') inp.min = min;
+  if (max !== '') inp.max = max;
+  document.getElementById('edit-popup-unit').textContent = unit || '';
+  document.getElementById('edit-popup-overlay').classList.add('show');
+  setTimeout(() => inp.focus(), 150);
+}
+function hideEditPopup() {
+  document.getElementById('edit-popup-overlay').classList.remove('show');
+  editPopupMeta = null;
+}
+function saveEditPopup() {
+  if (!editPopupMeta) return;
+  const val = document.getElementById('edit-popup-input').value.trim();
+  if (val === '') { hideEditPopup(); return; }
+  const u = appData.user;
+  const meta = editPopupMeta;
+  if (meta.type === 'number') {
+    u[meta.field] = parseFloat(val);
+  } else {
+    u[meta.field] = val;
+  }
+  saveData(appData);
+  hideEditPopup();
+  renderSettings();
+  showToast('已更新', 1500);
+}
+
+// ── Select Popup ──
+let selectPopupMeta = null;
+function openSelectPopup(title, field, icon, curr, options) {
+  selectPopupMeta = { field };
+  document.getElementById('select-popup-title').textContent = (icon||'') + ' ' + title;
+  const list = document.getElementById('select-popup-list');
+  const u = appData.user;
+  const current = u[field] || curr;
+  list.innerHTML = options.map(o => `<div class="select-item ${o === current ? 'sel' : ''}" onclick="selectPopupPick('${o}')">${o}</div>`).join('');
+  document.getElementById('select-popup-overlay').classList.add('show');
+}
+function selectPopupPick(val) {
+  if (!selectPopupMeta) return;
+  appData.user[selectPopupMeta.field] = val;
+  saveData(appData);
+  hideSelectPopup();
+  renderSettings();
+  showToast('已更新', 1500);
+}
+function hideSelectPopup() {
+  document.getElementById('select-popup-overlay').classList.remove('show');
+  selectPopupMeta = null;
+}
+
+// ── Health restrictions popup (existing) ──
+function showRestrictionsPopup() {
+  const u = appData.user;
+  const allTags = ['低脂肪', '低碘', '保护胃', '桥本甲状腺炎', '低糖', '低盐', '高蛋白'];
+  const selected = u.restrictions?.tags || [];
+  const prohibitions = u.restrictions?.prohibitions || '';
+  document.getElementById('restr-tag-grid').innerHTML = allTags.map(t => {
+    const sel = selected.includes(t);
+    return `<div class="restr-tag ${sel ? 'sel' : ''}" onclick="toggleRestrTag(this,'${t}')">${t}</div>`;
+  }).join('');
+  document.getElementById('edit-prohibitions').value = prohibitions;
+  document.getElementById('restr-popup-overlay').classList.add('show');
+}
+function hideRestrictionsPopup() {
+  document.getElementById('restr-popup-overlay').classList.remove('show');
+}
+function toggleRestrTag(el, tag) { el.classList.toggle('sel'); }
+function saveRestrictions() {
+  const u = appData.user;
+  const checked = document.querySelectorAll('#restr-tag-grid .restr-tag.sel');
+  u.restrictions = {
+    tags: Array.from(checked).map(el => el.textContent),
+    prohibitions: document.getElementById('edit-prohibitions').value.trim()
+  };
+  saveData(appData);
+  hideRestrictionsPopup();
+  renderSettings();
+  showToast('健康限制已更新', 1500);
+}
+</script>
+
+<!-- Sleep Quick Entry Popup -->
+<div class="sleep-popup-overlay" id="sleep-popup-overlay" onclick="if(event.target===this)hideSleepPopup()">
+  <div class="sleep-popup-sheet">
+    <div class="sleep-popup-title">🌙 记录睡眠</div>
+    <div class="sleep-popup-row">
+      <label>起床时间</label>
+      <input type="time" id="sleep-wake-input" value="07:00" />
+    </div>
+    <div class="sleep-popup-row">
+      <label>睡觉时间</label>
+      <input type="time" id="sleep-sleep-input" value="23:00" />
+    </div>
+    <div class="sleep-popup-actions">
+      <button class="sleep-popup-cancel" onclick="hideSleepPopup()">取消</button>
+      <button class="sleep-popup-save" onclick="saveSleepRecord()">保存</button>
+    </div>
+  </div>
+</div>
+<!-- Restrictions Popup -->
+<div class="restr-popup-overlay" id="restr-popup-overlay" onclick="if(event.target===this)hideRestrictionsPopup()">
+  <div class="restr-popup-sheet">
+    <div class="restr-popup-title">🏥 健康限制</div>
+    <div class="restr-tag-grid" id="restr-tag-grid"></div>
+    <textarea id="edit-prohibitions" style="width:100%;border:1.5px solid var(--border);border-radius:12px;padding:10px 12px;font-size:13px;font-family:inherit;color:var(--text-dark);resize:vertical;min-height:72px;box-sizing:border-box;background:var(--card-bg)" placeholder="禁忌食物，逗号分隔，如：海带、紫菜、辛辣、油炸"></textarea>
+    <div class="restr-popup-actions">
+      <button class="restr-popup-cancel" onclick="hideRestrictionsPopup()">取消</button>
+      <button class="restr-popup-save" onclick="saveRestrictions()">保存</button>
+    </div>
+  </div>
+</div>
+</body>
+</html>
