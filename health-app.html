@@ -724,9 +724,9 @@
           <span class="row-value" id="import-status"></span>
           <span class="row-arrow">›</span>
         </div>
-        <div class="settings-row" onclick="showToast('导出功能开发中',1500)">
+        <div class="settings-row" onclick="exportData()">
           <div class="row-icon ic-gray">📤</div>
-          <div class="row-content"><div class="row-title">导出数据</div></div>
+          <div class="row-content"><div class="row-title">导出数据备份</div><div class="row-subtitle">下载 JSON 文件到本地</div></div>
           <span class="row-arrow">›</span>
         </div>
         <div class="settings-row" onclick="showToast('隐私设置开发中',1500)">
@@ -1953,13 +1953,12 @@ function showToast(msg, duration = 3000) {
 
 // ─── 历史数据导入 ────────────────────────────────────────────────────
 async function importHistoryData() {
-  const btn = document.getElementById('import-btn');
   const status = document.getElementById('import-status');
-  status.textContent = '...'; status.style.color = 'var(--text-mid)';
+  status.textContent = '⏳'; status.style.color = 'var(--text-mid)';
   
   try {
     const resp = await fetch('import_data.json?' + Date.now());
-    if (!resp.ok) throw new Error('找不到数据文件');
+    if (!resp.ok) throw new Error('找不到数据文件 (HTTP ' + resp.status + ')');
     const imported = await resp.json();
     
     const existing = JSON.parse(localStorage.getItem('health_diary_data') || '{}');
@@ -1967,14 +1966,21 @@ async function importHistoryData() {
     
     let merged = 0, skipped = 0;
     for (const [date, data] of Object.entries(imported.logs)) {
-      if (!existing.logs[date] || (existing.logs[date].meals || []).length === 0) {
+      if (existing.logs[date] && (existing.logs[date].meals || []).length > 0) {
+        skipped++;
+      } else {
         existing.logs[date] = data;
         merged++;
-      } else {
-        skipped++;
       }
     }
     
+    if (merged === 0 && skipped > 0) {
+      status.textContent = `✅ 已有${skipped}天`;
+      status.style.color = 'var(--text-mid)';
+      showToast(`全部 ${skipped} 天数据已存在，无需重复导入。如需强制刷新请先清除数据`, 4000);
+      return;
+    }
+
     localStorage.setItem('health_diary_data', JSON.stringify(existing));
     appData = JSON.parse(localStorage.getItem('health_diary_data'));
     refreshDashboard();
@@ -1982,12 +1988,28 @@ async function importHistoryData() {
     
     status.textContent = `✅ ${merged}天`;
     status.style.color = 'var(--green-600)';
-    showToast(`已导入 ${merged} 天数据（跳过 ${skipped} 天已有数据）`, 3000);
+    showToast(`已导入 ${merged} 天数据${skipped > 0 ? '（跳过 ' + skipped + ' 天已有数据）' : ''}`, 3000);
   } catch (e) {
     status.textContent = '❌';
     status.style.color = 'var(--red-600)';
-    showToast('导入失败: ' + e.message, 3000);
+    showToast('导入失败: ' + e.message, 3500);
   }
+}
+
+// ─── 数据导出 ────────────────────────────────────────────────────
+function exportData() {
+  const raw = localStorage.getItem('health_diary_data');
+  if (!raw) { showToast('暂无数据可导出', 2000); return; }
+  const data = JSON.parse(raw);
+  const count = Object.keys(data.logs || {}).length;
+  const blob = new Blob([JSON.stringify(data, null, 2)], {type: 'application/json'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'health-backup-' + new Date().toISOString().slice(0,10) + '.json';
+  a.click();
+  URL.revokeObjectURL(url);
+  showToast(`已导出 ${count} 天数据`, 2000);
 }
 
 // Init
