@@ -1,0 +1,643 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>健康打卡 · 对话</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  :root {
+    --green-100: #dcf3e6;
+    --green-200: #b8e6cc;
+    --green-500: #45a873;
+    --green-600: #2e8a59;
+    --green-700: #1e6b42;
+    --mint: #e8f5ee;
+    --cream: #fafdf8;
+    --text-dark: #1a2e22;
+    --text-mid: #3d5447;
+    --text-muted: #7a9585;
+    --text-light: #a8c0b0;
+    --card-bg: #ffffff;
+    --border: #e2ede7;
+  }
+
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: #f2f7f4;
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+    min-height: 100vh;
+    padding: 24px 16px;
+  }
+
+  .phone {
+    width: 390px;
+    background: var(--cream);
+    border-radius: 48px;
+    overflow: hidden;
+    box-shadow: 0 32px 80px rgba(30,107,66,0.15), 0 8px 24px rgba(0,0,0,0.08);
+    display: flex;
+    flex-direction: column;
+    height: 844px;
+    position: relative;
+  }
+
+  .status-bar {
+    display: flex;
+    justify-content: space-between;
+    padding: 14px 28px 0;
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--text-mid);
+    flex-shrink: 0;
+  }
+
+  /* Chat header */
+  .chat-header {
+    padding: 10px 20px 12px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    border-bottom: 1px solid var(--border);
+    flex-shrink: 0;
+    background: var(--cream);
+  }
+
+  .header-right { margin-left: auto; }
+
+  .header-btn {
+    width: 32px; height: 32px;
+    border-radius: 50%;
+    background: var(--mint);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+    cursor: pointer;
+    border: none;
+    transition: background 0.15s;
+  }
+  .header-btn:hover { background: var(--green-200); }
+
+  .ai-avatar {
+    width: 38px; height: 38px;
+    border-radius: 50%;
+    background: var(--green-600);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+    flex-shrink: 0;
+  }
+
+  .ai-info h3 { font-size: 15px; font-weight: 600; color: var(--text-dark); }
+  .ai-info p { font-size: 11px; color: var(--green-500); margin-top: 1px; display: flex; align-items: center; gap: 4px; }
+
+  .online-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--green-500); display: inline-block; }
+
+  /* Messages */
+  .messages {
+    flex: 1;
+    overflow-y: auto;
+    padding: 16px 16px 8px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .messages:empty::before {
+    content: '今天感觉怎么样？\A告诉我吃了什么、运动了多久~';
+    white-space: pre-wrap;
+    color: var(--text-light);
+    font-size: 14px;
+    line-height: 1.7;
+    text-align: center;
+    padding: 40px 20px;
+    display: block;
+  }
+
+  .date-divider {
+    text-align: center;
+    font-size: 11px;
+    color: var(--text-light);
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .date-divider::before, .date-divider::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--border);
+  }
+
+  /* Bubbles */
+  .msg-ai { display: flex; align-items: flex-end; gap: 8px; }
+  .msg-user { display: flex; justify-content: flex-end; }
+
+  .msg-ai-avatar {
+    width: 28px; height: 28px;
+    border-radius: 50%;
+    background: var(--green-600);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 14px; flex-shrink: 0;
+  }
+
+  .bubble-ai {
+    background: var(--card-bg);
+    border: 1px solid var(--border);
+    border-radius: 18px 18px 18px 4px;
+    padding: 11px 14px;
+    max-width: 280px;
+    font-size: 14px;
+    color: var(--text-dark);
+    line-height: 1.55;
+  }
+  .bubble-ai .time { font-size: 10px; color: var(--text-light); margin-top: 5px; }
+
+  .bubble-user {
+    background: var(--green-600);
+    border-radius: 18px 18px 4px 18px;
+    padding: 11px 14px;
+    max-width: 280px;
+    font-size: 14px;
+    color: white;
+    line-height: 1.55;
+  }
+  .bubble-user .time { font-size: 10px; color: rgba(255,255,255,0.5); margin-top: 5px; text-align: right; }
+
+  /* Typing indicator */
+  .typing-indicator { display: flex; align-items: flex-end; gap: 8px; }
+  .typing-dots {
+    background: var(--card-bg);
+    border: 1px solid var(--border);
+    border-radius: 18px 18px 18px 4px;
+    padding: 12px 16px;
+    display: flex; gap: 4px; align-items: center;
+  }
+  .typing-dots span { width: 6px; height: 6px; border-radius: 50%; background: var(--text-light); animation: bounce 1.2s infinite; }
+  .typing-dots span:nth-child(2) { animation-delay: 0.2s; }
+  .typing-dots span:nth-child(3) { animation-delay: 0.4s; }
+  @keyframes bounce {
+    0%, 80%, 100% { transform: translateY(0); opacity: 0.4; }
+    40% { transform: translateY(-6px); opacity: 1; }
+  }
+
+  /* Record confirm card */
+  .record-confirm {
+    background: var(--card-bg);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    overflow: hidden;
+    max-width: 280px;
+  }
+  .record-confirm-header {
+    background: var(--mint);
+    padding: 10px 14px;
+    display: flex; align-items: center; gap: 8px;
+    font-size: 12px; font-weight: 600; color: var(--green-700);
+  }
+  .record-confirm-body { padding: 10px 14px; }
+  .confirm-row { display: flex; justify-content: space-between; align-items: center; padding: 5px 0; font-size: 13px; border-bottom: 1px solid var(--border); }
+  .confirm-row:last-child { border-bottom: none; }
+  .confirm-label { color: var(--text-muted); }
+  .confirm-value { font-weight: 500; color: var(--text-dark); }
+  .confirm-actions { display: flex; gap: 8px; padding: 10px 14px 12px; }
+  .btn-confirm {
+    flex: 1; background: var(--green-600); color: white;
+    border: none; border-radius: 10px; padding: 8px;
+    font-size: 13px; font-weight: 600; cursor: pointer; font-family: 'DM Sans', sans-serif;
+  }
+  .btn-edit {
+    flex: 1; background: var(--mint); color: var(--green-700);
+    border: none; border-radius: 10px; padding: 8px;
+    font-size: 13px; font-weight: 600; cursor: pointer; font-family: 'DM Sans', sans-serif;
+  }
+
+  /* Quick replies */
+  .quick-replies { display: flex; gap: 6px; flex-wrap: wrap; padding: 0 16px 4px; flex-shrink: 0; }
+  .quick-reply {
+    background: var(--card-bg); border: 1px solid var(--border);
+    border-radius: 16px; padding: 6px 12px;
+    font-size: 12px; font-weight: 500; color: var(--green-600);
+    cursor: pointer; white-space: nowrap; transition: background 0.15s;
+  }
+  .quick-reply:hover { background: var(--mint); }
+
+  /* Input bar */
+  .input-bar {
+    padding: 8px 16px 28px;
+    background: var(--cream);
+    border-top: 1px solid var(--border);
+    display: flex; align-items: flex-end; gap: 10px;
+    flex-shrink: 0;
+  }
+  .input-wrap {
+    flex: 1; background: var(--card-bg); border: 1px solid var(--border);
+    border-radius: 24px; display: flex; align-items: center;
+    padding: 8px 12px; gap: 8px; transition: border-color 0.2s;
+  }
+  .input-wrap:focus-within { border-color: var(--green-500); }
+  .input-wrap input {
+    flex: 1; border: none; outline: none;
+    font-size: 14px; font-family: 'DM Sans', sans-serif;
+    color: var(--text-dark); background: transparent;
+  }
+  .input-wrap input::placeholder { color: var(--text-light); }
+  .send-btn {
+    width: 40px; height: 40px; border-radius: 50%;
+    background: var(--green-600); border: none;
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer; flex-shrink: 0; transition: background 0.15s;
+  }
+  .send-btn:hover { background: var(--green-700); }
+  .send-btn:disabled { background: var(--text-light); cursor: not-allowed; }
+  .send-btn svg { width: 18px; height: 18px; color: white; }
+
+  /* Toast */
+  .error-toast {
+    position: absolute; bottom: 90px; left: 50%; transform: translateX(-50%);
+    background: var(--green-700); color: white;
+    padding: 10px 16px; border-radius: 12px;
+    font-size: 12px; font-weight: 500; z-index: 50;
+    white-space: nowrap; opacity: 0;
+    transition: opacity 0.3s; pointer-events: none;
+  }
+  .error-toast.show { opacity: 1; }
+</style>
+</head>
+<body>
+
+<div class="phone">
+  <div class="status-bar">
+    <span id="statusTime">--:--</span>
+    <span>●●● 🔋</span>
+  </div>
+
+  <div class="chat-header">
+    <div class="ai-avatar">🌿</div>
+    <div class="ai-info">
+      <h3>健康助手</h3>
+      <p><span class="online-dot"></span> 模拟模式</p>
+    </div>
+    <div class="header-right">
+      <button class="header-btn" onclick="clearChat()" title="清空对话">🗑</button>
+    </div>
+  </div>
+
+  <div class="messages" id="messagesArea">
+    <div class="date-divider" id="dateDivider"></div>
+  </div>
+
+  <div class="quick-replies">
+    <div class="quick-reply" onclick="sendQuickReply(this)">📝 记录早/午/晚餐</div>
+    <div class="quick-reply" onclick="sendQuickReply(this)">🏃 记录运动</div>
+    <div class="quick-reply" onclick="sendQuickReply(this)">💧 记录喝水</div>
+    <div class="quick-reply" onclick="sendQuickReply(this)">⚖️ 记录体重</div>
+    <div class="quick-reply" onclick="sendQuickReply(this)">❓ 问问能不能吃</div>
+  </div>
+
+  <div class="input-bar">
+    <div class="input-wrap">
+      <input type="text" id="messageInput" placeholder="告诉我今天吃了什么…" onkeydown="handleKeyDown(event)">
+    </div>
+    <button class="send-btn" id="sendBtn" onclick="sendMessage()">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+        <line x1="22" y1="2" x2="11" y2="13"></line>
+        <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+      </svg>
+    </button>
+  </div>
+
+  <div class="error-toast" id="errorToast"></div>
+</div>
+
+<script>
+// ─── API 配置（正式接入时替换这里）────────────────────────────────
+// 公司平台接入时填写：
+// const API_URL = 'https://tc-paperhub.diezhi.net/v1/chat/completions';
+// const MODEL_NAME = '你的模型名';
+// const API_KEY = '你的Key';
+
+// 当前：模拟 AI 回复（调试用，正式接入时删除这段注释并取消下面的 callAIMock 注释）
+
+// ─── Init ──────────────────────────────────────────────────────────
+function updateStatusTime() {
+  const now = new Date();
+  const el = document.getElementById('statusTime');
+  if (el) el.textContent = `${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`;
+}
+function updateDateDivider() {
+  const now = new Date();
+  const months = ['1月','2月','3月','4月','5月','6月','7月','8月','9月','10月','11月','12月'];
+  const days = ['星期日','星期一','星期二','星期三','星期四','星期五','星期六'];
+  const el = document.getElementById('dateDivider');
+  if (el) el.textContent = `今天 · ${now.getFullYear()}年${months[now.getMonth()]}${now.getDate()}日 ${days[now.getDay()]}`;
+}
+updateStatusTime();
+updateDateDivider();
+setInterval(updateStatusTime, 10000);
+
+// ─── State ─────────────────────────────────────────────────────────
+let conversationHistory = [];
+let isLoading = false;
+
+// ─── System Prompt ─────────────────────────────────────────────────
+function buildSystemPrompt() {
+  return `【身份】你是一个温暖、鼓励型的中文健康助手，名字叫"小草"。你的目标是通过日常对话帮助用户完成健康打卡，并给出贴合个人情况的建议。
+
+【用户健康档案】
+- 减脂目标：2026年5月13日开始，为期6个月，体重从75.4kg减至65kg
+- 每日热量预算：约1600-1800 kcal
+- 饮食限制：低脂肪、低碘，保护胃黏膜（不吃辛辣刺激、少油少盐）
+- 已知健康状况：慢性胃炎、胆结石、桥本氏甲状腺炎
+- 常见禁忌食物：海带（含高碘）、紫菜（高碘）、腌制食品、酒类、浓茶、咖啡、辛辣食物、油炸食品
+- 运动习惯：每天7:30-8:30慢跑，配速9-10分钟/km，距离3-5km
+
+【能力】从用户自然语言中识别并提取结构化数据：
+
+1. 饮食记录：餐次、食物名称、估计热量（kcal）、时间
+2. 运动记录：类型、距离（km）或时长（分钟）、消耗热量（kcal）
+3. 饮水记录：饮水量（ml）
+4. 排便记录：有/无，状态描述
+5. 体重记录：体重数值（kg）
+6. 睡眠记录：入睡时间、起床时间、睡眠时长
+
+【回复格式】
+
+当用户描述了健康相关活动，请按以下格式回复：
+
+先用鼓励性语言简短回应（1-2句话，带emoji，保持温暖语气）。
+
+然后在回复末尾包含一个JSON对象，用【】包裹：
+
+【{"type":"record","data":{"meal":"早餐","items":[{"name":"食物名","cal":数字}],"exercise":{"type":"跑步","duration":数字,"cal":数字},"water":数字,"bowel":true/false,"weight":数字,"sleep":{"bed":"HH:MM","wake":"HH:MM","hours":数字}}}】
+
+当用户询问"能不能吃/可以吃X吗"时：
+- 先给出明确判断（可以/不建议/少吃）
+- 结合用户的饮食限制说明原因
+- 给出具体建议（替代品或适量建议）
+- 末尾加上【{"type":"question","question":"食物名称","answer":"判断","reason":"原因","替代建议":"..."}】
+
+只输出JSON，不输出额外解释文字。确保JSON是合法的单行格式。`;
+}
+
+// ─── API call（模拟版本）──────────────────────────────────────────
+async function callAI(userMessage) {
+  // 模拟网络延迟
+  await new Promise(r => setTimeout(r, 800 + Math.random() * 800));
+
+  const text = userMessage;
+  let response = '';
+
+  // 根据用户输入生成不同回复
+  if (text.includes('吃') || text.includes('早') || text.includes('午') || text.includes('晚') || text.includes('餐')) {
+    const foods = [
+      { name: '水煮蛋 × 2', cal: 140 },
+      { name: '燕麦粥', cal: 180 },
+      { name: '牛奶 250ml', cal: 130 }
+    ];
+    const total = foods.reduce((s, f) => s + f.cal, 0);
+    response = `早餐吃得很扎实！蛋白质和碳水都有了 💪 吃饱了吗？记得按时喝水哦~\n\n【{"type":"record","data":{"meal":"早餐","items":[{"name":"水煮蛋 × 2","cal":140},{"name":"燕麦粥","cal":180},{"name":"牛奶 250ml","cal":130}],"water":300,"bowel":true}}】`;
+  } else if (text.includes('跑') || text.includes('运动') || text.includes('公里') || text.includes('km')) {
+    response = `跑下来了！今天状态不错 🌿 跑步对减脂很有效，注意跑后拉伸哦~\n\n【{"type":"record","data":{"exercise":{"type":"户外跑步","distance":3.5,"duration":35,"cal":280}}}】`;
+  } else if (text.includes('水') || text.includes('喝')) {
+    response = `好嘞，记下来了 💧 每天喝够水对代谢很重要哦~\n\n【{"type":"record","data":{"water":500}}】`;
+  } else if (text.includes('体重') || text.includes('kg')) {
+    response = `收到！体重记录已更新 📝 坚持下去，你会看到变化的~\n\n【{"type":"record","data":{"weight":74.2}}】`;
+  } else if (text.includes('能不能') || text.includes('可以吃') || text.includes('能吃')) {
+    response = `可以吃，但建议控制在少量（3片以内约160kcal）哦。你今天还有760kcal的空间，偶尔解馋没问题 😊 更好的选择是一小把坚果或希腊酸奶~\n\n【{"type":"question","question":"奥利奥","answer":"少吃可以","reason":"热量较高，建议控制量","替代建议":"坚果或希腊酸奶更健康"}】`;
+  } else {
+    const replies = [
+      `今天感觉怎么样？有什么不舒服记得告诉我哦 🌱`,
+      `收到！我帮你记下来了 💚 今天的进度很棒，继续保持~`,
+      `辛苦了！有什么想问的随时说，我在呢 😊`
+    ];
+    response = replies[Math.floor(Math.random() * replies.length)];
+  }
+
+  return response;
+}
+
+// 正式版 API 调用（公司平台信息确认后启用）
+// async function callAI(userMessage) {
+//   const recentHistory = conversationHistory.slice(-20);
+//   const messages = [
+//     { role: 'system', content: buildSystemPrompt() },
+//     ...recentHistory,
+//     { role: 'user', content: userMessage }
+//   ];
+//   const response = await fetch(API_URL, {
+//     method: 'POST',
+//     headers: {
+//       'Content-Type': 'application/json',
+//       'Authorization': `Bearer ${API_KEY}`
+//     },
+//     body: JSON.stringify({ model: MODEL_NAME, messages: messages, max_tokens: 1024 })
+//   });
+//   if (!response.ok) {
+//     const err = await response.json().catch(() => ({}));
+//     throw new Error(err.error?.message || `请求失败 (${response.status})`);
+//   }
+//   const data = await response.json();
+//   return data.choices[0].message.content;
+// }
+
+// ─── Parse ─────────────────────────────────────────────────────────
+function parseAIResponse(text) {
+  const match = text.match(/【(\{.*?\})】/);
+  if (!match) return { displayText: text, structuredData: null };
+  try {
+    const json = JSON.parse(match[1]);
+    const displayText = text.replace(/【\{.*?\}】/, '').trim();
+    return { displayText, structuredData: json };
+  } catch {
+    return { displayText: text, structuredData: null };
+  }
+}
+
+// ─── Render ────────────────────────────────────────────────────────
+function formatTime() {
+  const now = new Date();
+  return `${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`;
+}
+
+function escapeHtml(str) {
+  if (!str) return '';
+  return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/\n/g, '<br>');
+}
+
+function addUserBubble(text) {
+  const msgs = document.getElementById('messagesArea');
+  const div = document.createElement('div');
+  div.className = 'msg-user';
+  div.innerHTML = `<div class="bubble-user">${escapeHtml(text)}<div class="time">${formatTime()}</div></div>`;
+  msgs.appendChild(div);
+  msgs.scrollTop = msgs.scrollHeight;
+}
+
+function addAIBubble(text, structuredData) {
+  const msgs = document.getElementById('messagesArea');
+
+  if (structuredData && structuredData.type === 'record' && structuredData.data) {
+    const card = buildConfirmCard(structuredData.data);
+    const bubble = document.createElement('div');
+    bubble.className = 'msg-ai';
+    bubble.innerHTML = `<div class="msg-ai-avatar">🌿</div>
+      <div>
+        <div class="record-confirm">${card}</div>
+        <div class="bubble-ai" style="margin-top:6px;border-radius:4px 18px 18px 4px">${escapeHtml(text)}<div class="time">${formatTime()}</div></div>
+      </div>`;
+    msgs.appendChild(bubble);
+    msgs.scrollTop = msgs.scrollHeight;
+    return;
+  }
+
+  const div = document.createElement('div');
+  div.className = 'msg-ai';
+  div.innerHTML = `<div class="msg-ai-avatar">🌿</div>
+    <div class="bubble-ai">${escapeHtml(text)}<div class="time">${formatTime()}</div></div>`;
+  msgs.appendChild(div);
+  msgs.scrollTop = msgs.scrollHeight;
+}
+
+function buildConfirmCard(data) {
+  let rows = '';
+
+  if (data.meal && data.items) {
+    rows += `<div style="padding:8px 14px 4px;font-size:12px;font-weight:600;color:var(--green-700)">✦ 饮食记录</div>`;
+    data.items.forEach(item => {
+      rows += `<div class="confirm-row"><span class="confirm-label">${escapeHtml(item.name)}</span><span class="confirm-value">${item.cal} kcal</span></div>`;
+    });
+    const total = data.items.reduce((s, i) => s + (i.cal || 0), 0);
+    rows += `<div class="confirm-row"><span class="confirm-label">合计</span><span class="confirm-value" style="color:var(--green-600)">${total} kcal</span></div>`;
+  }
+
+  if (data.exercise) {
+    const ex = data.exercise;
+    rows += `<div style="padding:8px 14px 4px;font-size:12px;font-weight:600;color:var(--green-700);border-top:1px solid var(--border);margin-top:4px;padding-top:12px">✦ 运动记录</div>`;
+    rows += `<div class="confirm-row"><span class="confirm-label">${ex.type || '运动'}</span><span class="confirm-value">${ex.duration || ex.distance || ''} ${ex.distance ? 'km' : '分钟'}</span></div>`;
+    if (ex.cal) rows += `<div class="confirm-row"><span class="confirm-label">消耗</span><span class="confirm-value" style="color:var(--green-600)">${ex.cal} kcal</span></div>`;
+  }
+
+  if (data.water) {
+    rows += `<div style="padding:8px 14px 4px;font-size:12px;font-weight:600;color:var(--green-700);border-top:1px solid var(--border);margin-top:4px;padding-top:12px">✦ 饮水记录</div>`;
+    rows += `<div class="confirm-row"><span class="confirm-label">饮水量</span><span class="confirm-value" style="color:var(--green-600)">${data.water} ml</span></div>`;
+  }
+
+  if (data.weight) {
+    rows += `<div style="padding:8px 14px 4px;font-size:12px;font-weight:600;color:var(--green-700);border-top:1px solid var(--border);margin-top:4px;padding-top:12px">✦ 体重记录</div>`;
+    rows += `<div class="confirm-row"><span class="confirm-label">体重</span><span class="confirm-value" style="color:var(--green-600)">${data.weight} kg</span></div>`;
+  }
+
+  if (!rows) return '';
+
+  return `<div class="record-confirm-header">✦ 已识别健康记录</div>
+    <div class="record-confirm-body">${rows}</div>
+    <div class="confirm-actions">
+      <button class="btn-confirm" onclick="confirmRecord(this)">确认录入</button>
+      <button class="btn-edit" onclick="editRecord(this)">调整</button>
+    </div>`;
+}
+
+function showTyping() {
+  const msgs = document.getElementById('messagesArea');
+  const div = document.createElement('div');
+  div.className = 'typing-indicator';
+  div.id = 'typingEl';
+  div.innerHTML = `<div class="msg-ai-avatar">🌿</div><div class="typing-dots"><span></span><span></span><span></span></div>`;
+  msgs.appendChild(div);
+  msgs.scrollTop = msgs.scrollHeight;
+}
+
+function hideTyping() {
+  const el = document.getElementById('typingEl');
+  if (el) el.remove();
+}
+
+// ─── Actions ───────────────────────────────────────────────────────
+function confirmRecord(btn) {
+  const card = btn.closest('.record-confirm');
+  card.querySelector('.confirm-actions').innerHTML = '<div style="padding:8px 14px 10px;text-align:center;color:var(--green-600);font-size:13px;font-weight:600;">✅ 已录入！</div>';
+  showToast('已保存到今日记录', 2000);
+}
+
+function editRecord() {
+  showToast('可以重新发送消息来修正', 3000);
+}
+
+// ─── Send ─────────────────────────────────────────────────────────
+async function sendMessage() {
+  if (isLoading) return;
+  const input = document.getElementById('messageInput');
+  const text = input.value.trim();
+  if (!text) return;
+
+  input.value = '';
+  isLoading = true;
+  document.getElementById('sendBtn').disabled = true;
+
+  addUserBubble(text);
+  conversationHistory.push({ role: 'user', content: text });
+  showTyping();
+
+  try {
+    const aiText = await callAI(text);
+    hideTyping();
+    conversationHistory.push({ role: 'assistant', content: aiText });
+    const { displayText, structuredData } = parseAIResponse(aiText);
+    addAIBubble(displayText, structuredData);
+  } catch (err) {
+    hideTyping();
+    showToast(err.message, 4000);
+    conversationHistory.pop();
+  } finally {
+    isLoading = false;
+    document.getElementById('sendBtn').disabled = false;
+    document.getElementById('messageInput').focus();
+  }
+}
+
+function handleKeyDown(e) {
+  if (e.key === 'Enter' && !e.shiftKey) {
+    e.preventDefault();
+    sendMessage();
+  }
+}
+
+function sendQuickReply(el) {
+  const text = el.textContent.replace(/^[^\s]+\s/, '');
+  document.getElementById('messageInput').value = text;
+  sendMessage();
+}
+
+function clearChat() {
+  if (!confirm('确定清空当前对话？')) return;
+  conversationHistory = [];
+  const msgs = document.getElementById('messagesArea');
+  msgs.innerHTML = '';
+  const div = document.createElement('div');
+  div.className = 'date-divider';
+  div.id = 'dateDivider';
+  const now = new Date();
+  const months = ['1月','2月','3月','4月','5月','6月','7月','8月','9月','10月','11月','12月'];
+  const days = ['星期日','星期一','星期二','星期三','星期四','星期五','星期六'];
+  div.textContent = `今天 · ${now.getFullYear()}年${months[now.getMonth()]}${now.getDate()}日 ${days[now.getDay()]}`;
+  msgs.appendChild(div);
+  showToast('对话已清空', 1500);
+}
+
+function showToast(msg, duration = 3000) {
+  const toast = document.getElementById('errorToast');
+  toast.textContent = msg;
+  toast.classList.add('show');
+  setTimeout(() => toast.classList.remove('show'), duration);
+}
+</script>
+</body>
+</html>

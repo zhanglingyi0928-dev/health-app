@@ -1,0 +1,623 @@
+{
+  "logs": {
+    "2026-05-13": {
+      "meals": [
+        {
+          "time": "7:15",
+          "name": "早餐",
+          "description": "早餐7:15：面汤200ml，鸡蛋饼100g"
+        },
+        {
+          "time": "10:30",
+          "name": "上午加餐",
+          "description": "加餐10:30：甜豆浆200ml，茶叶蛋1个，梅干菜包1个"
+        },
+        {
+          "time": "12:30",
+          "name": "午餐",
+          "description": "午餐12:30：紫米饭100g，蔬菜250g（青椒炒蛋、豆角木耳肉丝、煎豆腐），肉50g（牛肉4片）"
+        },
+        {
+          "time": "14:00",
+          "name": "下午加餐",
+          "description": "下午14:00：霸王茶姬 伯牙绝铉中杯 热 微糖 236大卡"
+        },
+        {
+          "time": "17:30",
+          "name": "晚餐",
+          "description": "晚餐17:30：沙拉Plus - 香烤鸡胸肉烤蔬菜 + 海苔 +荞麦面 + 煎鸡蛋"
+        }
+      ],
+      "exercise": {
+        "type": "跑步",
+        "notes": "晨跑4.3km，用时43分钟，配速10′04″/公里，平均心率138，消耗339大卡",
+        "distance": 4.3,
+        "duration": 43,
+        "calories": 339
+      },
+      "waterEntries": [],
+      "bowel": null,
+      "weightEntries": [
+        {
+          "time": "07:00",
+          "value": 75.4,
+          "type": "morning"
+        }
+      ],
+      "wake_time": null,
+      "sleep_time": null
+    },
+    "2026-05-14": {
+      "meals": [
+        {
+          "time": "7:20",
+          "name": "早餐",
+          "description": "早餐7:20：面汤1碗+白煮蛋2个+蒸山药10cm+紫薯50g+玉米1/4"
+        },
+        {
+          "time": "10:30",
+          "name": "上午加餐",
+          "description": "上午10:30：热拿铁200ml"
+        },
+        {
+          "time": "12:40",
+          "name": "午餐",
+          "description": "午餐12:40：喜家德饺子15个（角瓜9喜三鲜6）、紫菜虾皮汤2小碗、烫生菜50g"
+        },
+        {
+          "time": "16:00",
+          "name": "下午加餐",
+          "description": "下午16:00：牛腱肉55g，83大卡"
+        },
+        {
+          "time": "18:15",
+          "name": "晚餐",
+          "description": "晚餐18:15：鸡胸肉50g、包菜+西蓝花+胡萝卜150g、紫米饭50g"
+        }
+      ],
+      "exercise": {
+        "type": "跑步",
+        "notes": "晨跑4.02km，用时43分钟，配速10′51″/公里，平均心率122，消耗295大卡",
+        "distance": 4.02,
+        "duration": 43,
+        "calories": 295
+      },
+      "waterEntries": [],
+      "bowel": true,
+      "weightEntries": [
+        {
+          "time": "07:00",
+          "value": 75.3,
+          "type": "morning"
+        },
+        {
+          "time": "22:00",
+          "value": 77.0,
+          "type": "night"
+        }
+      ],
+      "wake_time": null,
+      "sleep_time": null
+    },
+    "2026-05-15": {
+      "meals": [
+        {
+          "time": "7:20",
+          "name": "早餐",
+          "description": "早餐分两次\n7:20：温水200ml、玉米1/4\n8:40：面汤1碗、白煮蛋2个、包菜150g"
+        },
+        {
+          "time": "10:40",
+          "name": "上午加餐",
+          "description": "上午10:40：热拿铁200ml"
+        },
+        {
+          "time": "12:30",
+          "name": "午餐",
+          "description": "午餐12:30：豉油鸡3块+烧鸭3块+虾仁滑蛋150g+鸡蛋仔8小块+萝卜+西兰花+30g熟米饭+热柠茶200ml"
+        },
+        {
+          "time": "18:00",
+          "name": "晚餐",
+          "description": "晚餐18:00：卤牛肉80g、清炒包菜+生菜150g，紫米饭40g"
+        }
+      ],
+      "exercise": {
+        "type": "跑步",
+        "notes": "晨跑4.41km，用时38分钟，配速8′48″/公里，平均心率142，消耗344大卡",
+        "distance": 4.41,
+        "duration": 38,
+        "calories": 344
+      },
+      "waterEntries": [],
+      "bowel": false,
+      "weightEntries": [
+        {
+          "time": "07:00",
+          "value": 76.2,
+          "type": "morning"
+        }
+      ],
+      "wake_time": null,
+      "sleep_time": null
+    },
+    "2026-05-16": {
+      "meals": [
+        {
+          "time": "8:30",
+          "name": "早餐",
+          "description": "早餐8:30：无糖豆浆1碗+2个白煮蛋+3/4根玉米+10cm山药"
+        },
+        {
+          "time": "12:00",
+          "name": "午餐",
+          "description": "午餐12:00：炒鸡蛋50g+虾饼1个+蒜蓉生蚝1个+红烧小黄鱼80g+40g熟米饭+蔬菜"
+        },
+        {
+          "time": "18:00",
+          "name": "晚餐",
+          "description": "晚餐18:00：小米汤1碗、凉拌菜150g"
+        }
+      ],
+      "exercise": {
+        "type": "跑步",
+        "notes": "晨跑3.28km，用时36分钟，配速11′07″/公里，平均心率127；晚间18:30-19:30练1小时臀腿普拉提",
+        "distance": 3.28,
+        "duration": 36
+      },
+      "waterEntries": [],
+      "bowel": true,
+      "weightEntries": [
+        {
+          "time": "07:00",
+          "value": 76.2,
+          "type": "morning"
+        },
+        {
+          "time": "22:00",
+          "value": 76.3,
+          "type": "night"
+        }
+      ],
+      "wake_time": null,
+      "sleep_time": null
+    },
+    "2026-05-17": {
+      "meals": [
+        {
+          "time": "",
+          "name": "早餐",
+          "description": "燕麦牛奶+2个白煮蛋+10cm山药（执行惩戒，取消玉米）"
+        },
+        {
+          "time": "12:00",
+          "name": "午餐",
+          "description": "午餐12:00：50g熟米饭+鸡肉+虾共50g+纯肉红烧肉2小块+蔬菜200g"
+        },
+        {
+          "time": "18:15",
+          "name": "晚餐",
+          "description": "晚餐18:15：小碗黑米粥+苦瓜鸡蛋+凉拌莴笋+清炒包菜合计200g"
+        }
+      ],
+      "exercise": {
+        "type": "跑步",
+        "notes": "晨跑4.14km，用时39分08秒，配速9′25″/公里，平均心率142，消耗306大卡；身体疲惫取消普拉提，晚饭后无氧锻炼15分钟",
+        "distance": 4.14,
+        "duration": 39.13333333333333,
+        "calories": 306
+      },
+      "waterEntries": [],
+      "bowel": true,
+      "weightEntries": [
+        {
+          "time": "07:00",
+          "value": 75.6,
+          "type": "morning"
+        },
+        {
+          "time": "22:00",
+          "value": 76.3,
+          "type": "night"
+        }
+      ],
+      "wake_time": null,
+      "sleep_time": null
+    },
+    "2026-05-18": {
+      "meals": [
+        {
+          "time": "7:20",
+          "name": "早餐",
+          "description": "早餐分两次：\n7:20：面汤1碗、山药8cm\n8:45：黑米粥1碗、白煮蛋2个"
+        },
+        {
+          "time": "10:40",
+          "name": "上午加餐",
+          "description": "上午10:40：热拿铁200ml"
+        },
+        {
+          "time": "12:35",
+          "name": "午餐",
+          "description": "午餐12:35：老乡鸡两人份（卤鸡腿、清蒸鳕鱼、西兰花炒肉、青豆肉末、白斩鸡、藜麦杂粮饭），食用半份，热量约485kcal"
+        },
+        {
+          "time": "18:25",
+          "name": "晚餐",
+          "description": "18:25 白米饭约 100g、香煎豆腐、番茄炒西葫芦、清炒包菜胡萝卜丝、卤瘦牛肉约 80g，估算热量约 456kcal"
+        }
+      ],
+      "exercise": {
+        "type": "跑步",
+        "notes": "晨跑4.04km，用时37分08秒，配速9′10″/公里，平均心率148，消耗331大卡",
+        "distance": 4.04,
+        "duration": 37.13333333333333,
+        "calories": 331
+      },
+      "waterEntries": [],
+      "bowel": true,
+      "weightEntries": [
+        {
+          "time": "07:00",
+          "value": 75.9,
+          "type": "morning"
+        },
+        {
+          "time": "22:00",
+          "value": 76.05,
+          "type": "night"
+        }
+      ],
+      "wake_time": null,
+      "sleep_time": null
+    },
+    "2026-05-19": {
+      "meals": [
+        {
+          "time": "6:50",
+          "name": "早餐",
+          "description": "6:50 进食：白煮蛋 2 个、蒸山药约 100g、甜玉米 1 段、蛋花面汤约 200ml，估算热量约 295kcal"
+        },
+        {
+          "time": "10:40",
+          "name": "上午加餐",
+          "description": "10:40 热拿铁 200ml"
+        },
+        {
+          "time": "12:25",
+          "name": "午餐",
+          "description": "12:25 进食：杂粮饭（紫米 + 藜麦）约 100g、清炒时蔬（白菜 + 生菜）约 150g、四季豆炒瘦肉约 120g，估算热量约 420kcal"
+        },
+        {
+          "time": "18:30",
+          "name": "晚餐",
+          "description": "18:30 进食：黑豆粉 20g、轻卤牛腱肉 55g、低 GI 藜麦素食沙拉 1 份，搭配少量 0 脂油醋汁，估算热量约 339kcal"
+        }
+      ],
+      "exercise": {
+        "type": "跑步",
+        "notes": "晨跑 4.19 公里，用时 35 分 04 秒，平均配速 8′22″/ 公里，消耗 340 千卡，平均心率 159 次 / 分；运动后体重 75.00kg",
+        "distance": 4.19,
+        "duration": 35.06666666666667,
+        "calories": 340
+      },
+      "waterEntries": [],
+      "bowel": true,
+      "weightEntries": [
+        {
+          "time": "07:00",
+          "value": 75.55,
+          "type": "morning"
+        },
+        {
+          "time": "22:00",
+          "value": 75.4,
+          "type": "night"
+        }
+      ],
+      "wake_time": null,
+      "sleep_time": null
+    },
+    "2026-05-20": {
+      "meals": [
+        {
+          "time": "8:30",
+          "name": "早餐",
+          "description": "8:30 进食：黑米粥 200ml、白煮蛋 2 个、蒸山药 80g、清炒蔬菜 100g，估算热量约 295kcal"
+        },
+        {
+          "time": "10:40",
+          "name": "上午加餐",
+          "description": "10:40 200ml 热拿铁，估算热量约 120kcal"
+        },
+        {
+          "time": "12:30",
+          "name": "午餐",
+          "description": "12:30 进食：杂粮饭（紫米 + 藜麦）约 100g、香菇青菜西兰花炒千张约 150g、四季豆胡萝卜炒火腿约 150g、卤瘦牛肉约 80g，估算热量约 480kcal"
+        },
+        {
+          "time": "15:30",
+          "name": "下午加餐",
+          "description": "15:30 热饮多肉葡萄（少少少糖，去奶盖），估算热量约 140kcal"
+        },
+        {
+          "time": "18:30",
+          "name": "晚餐",
+          "description": "18:30 进食：70g 奶油夹心戚风蛋糕 1 块、培根卷莴笋 2 个、小番茄 8 颗，估算热量约 280kcal"
+        }
+      ],
+      "exercise": {
+        "type": "跑步",
+        "notes": "晨跑 4.22 公里，用时 33 分 28 秒，平均配速 7′55″/ 公里，消耗 334 千卡，平均心率 159 次 / 分，晨跑后即时体重 74.50kg",
+        "distance": 4.22,
+        "duration": 33.46666666666667,
+        "calories": 334
+      },
+      "waterEntries": [],
+      "bowel": true,
+      "weightEntries": [
+        {
+          "time": "07:00",
+          "value": 75.0,
+          "type": "morning"
+        },
+        {
+          "time": "22:00",
+          "value": 75.4,
+          "type": "night"
+        }
+      ],
+      "wake_time": null,
+      "sleep_time": null
+    },
+    "2026-05-21": {
+      "meals": [
+        {
+          "time": "8:30",
+          "name": "早餐",
+          "description": "8:30 进食：面汤 200ml、白煮蛋 2 个、凉拌黄瓜 50g、5cm 山药，估算热量约 280kcal"
+        },
+        {
+          "time": "12:40",
+          "name": "午餐",
+          "description": "12:40 进食：牛上脑 + 嫩牛肉 150g、老豆腐 80g、脆笋 80g、少许蘸料、冰豆花 50g、银耳羹 150ml，估算热量约 485kcal"
+        },
+        {
+          "time": "18:20",
+          "name": "晚餐",
+          "description": "18:20 进食：黑米粥 200ml、豆芽炒豆皮 100g、豆腐胡萝卜肉沫 80g，估算热量约 265kcal"
+        }
+      ],
+      "exercise": {
+        "type": "跑步",
+        "notes": "08:10 户外跑步 4.06 公里，用时 30 分 56 秒，平均配速 7′36″/ 公里，消耗 318 千卡，平均心率 162 次 / 分，再次刷新个人 PB；跑步后体重 74.40kg",
+        "distance": 4.06,
+        "duration": 30.933333333333334,
+        "calories": 318
+      },
+      "waterEntries": [],
+      "bowel": true,
+      "weightEntries": [
+        {
+          "time": "07:00",
+          "value": 74.75,
+          "type": "morning"
+        }
+      ],
+      "wake_time": null,
+      "sleep_time": null
+    },
+    "2026-05-22": {
+      "meals": [
+        {
+          "time": "8:30",
+          "name": "早餐",
+          "description": "8:30 进食：黑米粥 200ml、蒸山药 8cm、白煮蛋 2 个、煮毛豆 100g，估算热量约 400kcal"
+        },
+        {
+          "time": "10:30",
+          "name": "上午加餐",
+          "description": "10:30 热拿铁 250ml，估算热量约 130kcal"
+        },
+        {
+          "time": "12:30",
+          "name": "午餐",
+          "description": "12:30 进食：青花椒鱼片 100g、生菜 30g、肉末豆腐 50g、米饭 30g，估算热量约 275kcal"
+        },
+        {
+          "time": "18:10",
+          "name": "晚餐",
+          "description": "18:10 进食：1/2 根玉米，估算热量约 110kcal"
+        }
+      ],
+      "exercise": {
+        "type": "跑步",
+        "notes": "08:21 户外跑步 5.68 公里，用时 47 分 02 秒，平均配速 8′16″/ 公里，消耗 446 千卡，平均心率 153 次 / 分，刷新消耗 PB；晨跑前饮用温水 500ml",
+        "distance": 5.68,
+        "duration": 47.03333333333333,
+        "calories": 446
+      },
+      "waterEntries": [],
+      "bowel": true,
+      "weightEntries": [
+        {
+          "time": "07:00",
+          "value": 75.45,
+          "type": "morning"
+        },
+        {
+          "time": "22:00",
+          "value": 75.35,
+          "type": "night"
+        }
+      ],
+      "wake_time": null,
+      "sleep_time": null
+    },
+    "2026-05-23": {
+      "meals": [
+        {
+          "time": "8:30",
+          "name": "早餐",
+          "description": "8:30 进食：无糖豆浆 200ml、蒸山药 8cm、白煮蛋 2 个、鸡蛋饼 50g，估算热量约 360kcal"
+        },
+        {
+          "time": "12:40",
+          "name": "午餐",
+          "description": "12:40 进食：猪肚鸡 100g、牛羊肉 150g、豆皮蘑菇凉菜 100g、煲仔饭 30g、菌菇 50g，估算热量约 610kcal"
+        },
+        {
+          "time": "18:30",
+          "name": "晚餐",
+          "description": "18:30 进食：小米汤 200ml、清炒豆角 150g，估算热量约 130kcal"
+        }
+      ],
+      "exercise": {
+        "type": "跑步",
+        "notes": "①08:35 户外跑步 6.02 公里，用时 52 分 16 秒，平均配速 8′40″/ 公里，消耗 459 千卡，平均心率 147 次 / 分，爬升高度 30 米，平均步频 145 步 / 分，刷新消耗 PB；②17:00-18:00 臀腿普拉提，消耗 178 千卡，当日运动总消耗 637 千卡",
+        "distance": 6.02,
+        "duration": 52.266666666666666,
+        "calories": 459
+      },
+      "waterEntries": [],
+      "bowel": true,
+      "weightEntries": [
+        {
+          "time": "07:00",
+          "value": 74.85,
+          "type": "morning"
+        },
+        {
+          "time": "22:00",
+          "value": 76.3,
+          "type": "night"
+        }
+      ],
+      "wake_time": null,
+      "sleep_time": null
+    },
+    "2026-05-24": {
+      "meals": [
+        {
+          "time": "8:30",
+          "name": "早餐",
+          "description": "8:30 进食：大米汤 200ml、白煮蛋 2 个、鸡蛋饼 100g、蒸山药 5cm，估算热量约 490kcal"
+        },
+        {
+          "time": "12:30",
+          "name": "午餐",
+          "description": "12:30 进食：米饭 50g、豆角炒肉丝 150g、去皮烤鸡肉 2 块，估算热量约 410kcal"
+        },
+        {
+          "time": "18:20",
+          "name": "晚餐",
+          "description": "18:20 进食：小米粥 1 碗、土豆丝 100g、豆角牛肉 30g，估算热量约 205kcal"
+        }
+      ],
+      "exercise": {
+        "type": "休息",
+        "notes": "今日主动休息调整，暂停跑步、普拉提训练，让身体全力代谢水肿"
+      },
+      "waterEntries": [],
+      "bowel": true,
+      "weightEntries": [
+        {
+          "time": "07:00",
+          "value": 75.8,
+          "type": "morning"
+        },
+        {
+          "time": "22:00",
+          "value": 76.6,
+          "type": "night"
+        }
+      ],
+      "wake_time": null,
+      "sleep_time": null
+    },
+    "2026-05-25": {
+      "meals": [
+        {
+          "time": "08:30",
+          "name": "早餐",
+          "description": "08:30 进食：面汤 250ml、山药 5cm、白煮蛋 2 个（少量酱油 + 芝麻油）、煮毛豆 100g，估算热量约 366kcal"
+        },
+        {
+          "time": "10:30",
+          "name": "上午加餐",
+          "description": "10:30 热拿铁 250ml，估算热量约 130kcal"
+        },
+        {
+          "time": "12:30",
+          "name": "午餐",
+          "description": "12:30 进食：鸡胸菌菇藜麦能量碗（含溏心蛋、西葫芦、番茄），估算热量约 455kcal"
+        },
+        {
+          "time": "18:10",
+          "name": "晚餐",
+          "description": "18:10进食：紫米杂粮饭 + 瘦猪肉 + 西葫芦木耳 + 烫青菜，约 480kcal"
+        }
+      ],
+      "exercise": {
+        "type": "跑步",
+        "notes": "08:29 户外跑步 4.05 公里，用时 34 分 40 秒，平均配速 8′33″/ 公里，消耗 316 千卡；执行隔天慢跑 + 快走交替方案",
+        "distance": 4.05,
+        "duration": 34.666666666666664,
+        "calories": 316
+      },
+      "waterEntries": [],
+      "bowel": true,
+      "weightEntries": [
+        {
+          "time": "07:00",
+          "value": 75.45,
+          "type": "morning"
+        },
+        {
+          "time": "22:00",
+          "value": 75.4,
+          "type": "night"
+        }
+      ],
+      "wake_time": null,
+      "sleep_time": null
+    },
+    "2026-05-26": {
+      "meals": [
+        {
+          "time": "7:00",
+          "name": "早餐",
+          "description": "7:00 进食：小米粥 250ml + 山药 10cm + 玉米 1/2 根 + 鸡蛋饼 100g + 白煮蛋 2 个，约 569kcal"
+        },
+        {
+          "time": "12:30",
+          "name": "午餐",
+          "description": "12:30 进食：紫米杂粮饭 + 去皮鸭腿肉 + 清炒蔬菜，约 385kcal"
+        },
+        {
+          "time": "14:00",
+          "name": "下午加餐",
+          "description": "14:00 燕麦拿铁 250ml（110kcal）"
+        }
+      ],
+      "exercise": {
+        "type": "快走",
+        "notes": "户外快走 4.03 公里，用时 43 分 25 秒，平均心率 129 次 / 分，消耗 298 千卡",
+        "distance": 4.03,
+        "duration": 43.416666666666664,
+        "calories": 298
+      },
+      "waterEntries": [],
+      "bowel": null,
+      "weightEntries": [
+        {
+          "time": "07:00",
+          "value": 75.15,
+          "type": "morning"
+        }
+      ],
+      "wake_time": null,
+      "sleep_time": null
+    }
+  }
+}

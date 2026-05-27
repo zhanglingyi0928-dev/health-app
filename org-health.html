@@ -1,0 +1,1427 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>奇暖 - 组织健康度季度诊断报告</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<style>
+  :root {
+    --c-green: #10b981; --c-yellow: #f59e0b; --c-orange: #f97316; --c-red: #ef4444;
+    --bg: #f8fafc; --card: #ffffff; --border: #e2e8f0; --text: #1e293b; --text-muted: #64748b;
+  }
+  * { box-sizing: border-box; }
+  body { background: var(--bg); color: var(--text); font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; }
+  .card { background: var(--card); border-radius: 16px; box-shadow: 0 1px 3px rgba(0,0,0,0.04), 0 1px 2px rgba(0,0,0,0.06); }
+  .score-dot { width: 10px; height: 10px; border-radius: 50%; display: inline-block; }
+  .ring-bg { stroke: #e2e8f0; }
+  .dim-bar { height: 6px; border-radius: 3px; background: #e2e8f0; overflow: hidden; }
+  .dim-bar-fill { height: 100%; border-radius: 3px; transition: width 0.6s ease; }
+  .tab-btn { padding: 8px 20px; border-radius: 8px; cursor: pointer; font-size: 14px; font-weight: 500; transition: all 0.2s; }
+  .tab-btn.active { background: #3b82f6; color: white; }
+  .tab-btn:not(.active) { color: var(--text-muted); }
+  .tab-btn:not(.active):hover { background: #f1f5f9; }
+  .modal-backdrop { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.4); z-index: 100; display: flex; align-items: center; justify-content: center; }
+  .modal-content { background: white; border-radius: 16px; width: 92%; max-width: 560px; max-height: 85vh; overflow-y: auto; padding: 28px; box-shadow: 0 20px 60px rgba(0,0,0,0.15); }
+  .metric-row { display: flex; align-items: center; gap: 12px; padding: 10px 14px; border-radius: 12px; transition: background 0.15s; cursor: pointer; }
+  .metric-row:hover { background: #f8fafc; }
+  .todo-badge { background: #fef2f2; color: #dc2626; font-size: 11px; padding: 1px 7px; border-radius: 10px; font-weight: 600; }
+  .grade-优秀 { background: var(--c-green); color: white; }
+  .grade-正常 { background: var(--c-yellow); color: white; }
+  .grade-警示 { background: var(--c-orange); color: white; }
+  .grade-危险 { background: var(--c-red); color: white; }
+  .grade-text-优秀 { color: var(--c-green); }
+  .grade-text-正常 { color: var(--c-yellow); }
+  .grade-text-警示 { color: var(--c-orange); }
+  .grade-text-危险 { color: var(--c-red); }
+  .fade-in { animation: fadeIn 0.25s ease; }
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+  @keyframes pulse-alert { 0%,100%{opacity:0.6} 50%{opacity:1} }
+  .alert-pulse { animation: pulse-alert 2s infinite; }
+  .source-tag { display: inline-flex; align-items: center; gap: 3px; font-size: 11px; padding: 2px 8px; border-radius: 6px; background: #eff6ff; color: #3b82f6; }
+  select, input[type="text"], textarea { border: 1px solid #e2e8f0; border-radius: 10px; padding: 8px 12px; font-size: 14px; outline: none; transition: border-color 0.15s; }
+  select:focus, input:focus, textarea:focus { border-color: #3b82f6; box-shadow: 0 0 0 2px rgba(59,130,246,0.1); }
+  .tooltip { position: relative; }
+  .tooltip:hover::after { content: attr(data-tip); position: absolute; bottom: calc(100% + 6px); left: 50%; transform: translateX(-50%); background: #1e293b; color: white; font-size: 11px; padding: 4px 10px; border-radius: 6px; white-space: nowrap; z-index: 10; }
+</style>
+</head>
+<body class="min-h-screen">
+
+<div id="app" class="max-w-5xl mx-auto py-6 px-4">
+  <!-- Header -->
+  <div class="flex items-center justify-between mb-5">
+    <div class="flex items-center gap-3">
+      <div>
+        <h1 class="text-xl font-bold tracking-tight">组织健康度季度报告</h1>
+        <div class="flex items-center gap-1.5 mt-0.5">
+          <span class="text-sm text-slate-500 cursor-pointer hover:text-blue-600 hover:underline decoration-dotted underline-offset-2 transition" id="teamNameDisplay" onclick="startEditTeamName()" title="点击编辑项目名称">奇暖项目组</span>
+          <svg onclick="startEditTeamName()" class="w-3.5 h-3.5 text-slate-300 hover:text-blue-500 cursor-pointer transition" fill="none" stroke="currentColor" viewBox="0 0 24 24" title="编辑项目名称"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"/></svg>
+          <input id="teamNameInput" class="hidden text-sm border border-blue-300 rounded-lg px-2 py-0.5 w-40 focus:outline-none focus:border-blue-500" value="奇暖项目组" onblur="saveTeamName()" onkeydown="if(event.key==='Enter')saveTeamName()">
+          <select id="projectPreset" onchange="switchProject()" class="text-xs border border-slate-200 rounded-lg py-0.5 px-2 text-slate-400 hover:border-slate-300 cursor-pointer bg-white">
+            <option value="">+ 切换项目模板</option>
+          </select>
+        </div>
+      </div>
+    </div>
+    <div class="flex items-center gap-2">
+      <!-- Quarter selector -->
+      <select id="quarterSelect" onchange="switchQuarter()" class="text-sm py-2 px-3 rounded-lg border-slate-200 bg-white cursor-pointer"></select>
+      <button onclick="addNewQuarter()" class="text-sm bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600 transition font-medium">新建报告</button>
+    </div>
+  </div>
+
+  <!-- Toolbar -->
+  <div class="flex items-center justify-between mb-5">
+    <div class="flex items-center gap-2">
+      <button onclick="exportData()" class="text-xs text-slate-500 bg-white border border-slate-200 px-3 py-1.5 rounded-lg hover:bg-slate-50 hover:border-slate-300 transition flex items-center gap-1" title="导出全部数据为JSON文件">
+        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2M7 10l5 5 5-5M12 15V3"/></svg>
+        导出
+      </button>
+      <button onclick="importData()" class="text-xs text-slate-500 bg-white border border-slate-200 px-3 py-1.5 rounded-lg hover:bg-slate-50 hover:border-slate-300 transition flex items-center gap-1" title="从JSON文件导入数据">
+        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2M7 10l5-5 5 5M12 3v12"/></svg>
+        导入
+      </button>
+      <button onclick="resetData()" class="text-xs text-red-400 bg-white border border-red-200 px-3 py-1.5 rounded-lg hover:bg-red-50 hover:border-red-300 transition flex items-center gap-1" title="清空所有数据，重置为空白模板">
+        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6M1 7h22M8 7V4a1 1 0 011-1h6a1 1 0 011 1v3"/></svg>
+        重置
+      </button>
+    </div>
+    <div class="text-xs text-slate-400" id="toolbarStatus"></div>
+  </div>
+
+  <!-- Meta bar -->
+  <div class="card px-5 py-3 mb-5 flex items-center gap-6 text-sm text-slate-500 flex-wrap">
+    <span>诊断周期：<strong id="metaPeriod" class="text-slate-700">--</strong></span>
+    <span>数据截止：<strong id="metaCutoff" class="text-slate-700">--</strong></span>
+    <span class="ml-auto text-xs text-slate-400">数据来源于HR系统、经营座舱、飞书绩效及人工录入</span>
+  </div>
+
+  <!-- Judgment Overview -->
+  <div class="card p-5 mb-5">
+    <div class="flex items-center gap-3" id="judgmentOverview">
+      <div class="flex-1 bg-green-50 rounded-xl p-3 text-center">
+        <div class="text-xl font-bold text-green-600" id="countNormal">0</div>
+        <div class="text-xs text-green-600 font-medium mt-0.5">正常关注</div>
+      </div>
+      <div class="flex-1 bg-orange-50 rounded-xl p-3 text-center">
+        <div class="text-xl font-bold text-orange-600" id="countDig">0</div>
+        <div class="text-xs text-orange-600 font-medium mt-0.5">需深挖</div>
+      </div>
+      <div class="flex-1 bg-red-50 rounded-xl p-3 text-center">
+        <div class="text-xl font-bold text-red-600" id="countFix">0</div>
+        <div class="text-xs text-red-600 font-medium mt-0.5">需改进</div>
+      </div>
+    </div>
+    <div class="flex flex-wrap gap-3 mt-3" id="dimBadges"></div>
+    <p id="overallVerdict" class="text-xs text-slate-400 mt-2">请在各维度中录入指标数据</p>
+  </div>
+
+  <!-- Tabs -->
+  <div class="flex gap-2 mb-4" id="tabs">
+    <button class="tab-btn active" data-tab="dimensions" onclick="switchTab('dimensions')">核心指标</button>
+    <button class="tab-btn" data-tab="todos" onclick="switchTab('todos')">
+      待跟进事项 <span id="todoBadge" class="ml-1 bg-red-100 text-red-600 px-2 py-0.5 rounded-full text-xs hidden">0</span>
+    </button>
+    <button class="tab-btn" data-tab="ai" onclick="switchTab('ai')">AI 报告解读</button>
+  </div>
+
+  <!-- Dimensions Tab -->
+  <div id="tab-dimensions" class="fade-in">
+    <div id="dimensionsList"></div>
+  </div>
+
+  <!-- Todos Tab -->
+  <div id="tab-todos" class="fade-in hidden">
+    <div id="todosAllContainer"></div>
+  </div>
+
+  <!-- AI Report Tab -->
+  <div id="tab-ai" class="fade-in hidden">
+    <div class="card p-5">
+      <div id="aiReportContent"></div>
+      <div id="aiGeneratedText" class="mt-4 text-sm text-slate-600 leading-relaxed whitespace-pre-wrap"></div>
+    </div>
+  </div>
+</div>
+
+<!-- Metric Edit Modal -->
+<div id="metricModal" class="modal-backdrop hidden" onclick="if(event.target===this)closeMetricModal()">
+  <div class="modal-content" onclick="event.stopPropagation()">
+    <div class="flex items-center justify-between mb-4">
+      <h3 class="text-lg font-semibold" id="modalTitle">编辑指标</h3>
+      <button onclick="closeMetricModal()" class="text-slate-400 hover:text-slate-600 text-xl">&times;</button>
+    </div>
+    <div id="modalBody"></div>
+  </div>
+</div>
+
+<script>
+// ============================================================================
+// DATA MODEL
+// ============================================================================
+const DIM_ORDER = ['目标对齐','组织结构','人才密度','组织稳定性'];
+const DIM_ICON = {'目标对齐':'🎯','组织结构':'🏗️','人才密度':'👥','组织稳定性':'🛡️'};
+const DIM_DESC = {
+  '目标对齐':'定"靶心" — 确保团队方向与公司战略一致',
+  '组织结构':'搭"骨架" — 以组织/岗位为核心，看结构配置合理性',
+  '人才密度':'填"血肉" — 当前人才状态及培养趋势是否支撑业务长远发展',
+  '组织稳定性':'保"长久" — 通过离职、晋升发展和加班负荷评估'
+};
+const DIM_WEIGHTS = { '目标对齐':0, '组织结构':25, '人才密度':25, '组织稳定性':25 };
+
+// Grade system: 4-level (优秀/正常/警示/危险)
+const GRADES = ['优秀','正常','警示','危险'];
+const GRADE_COLORS = { '优秀':'#10b981','正常':'#f59e0b','警示':'#f97316','危险':'#ef4444' };
+
+// Metrics with their data sources
+const DEFAULT_METRICS = {
+  '目标对齐': [
+    {key:'goal_deploy', name:'目标拆解落地率', formula:'已拆解至岗位（承接人）的目标数/总目标数×100%', source:'目标台账（OKR）', sourceType:'人工统计',
+     benchmarks:{'优秀':'≥90%','正常':'70%-90%','警示':'50%-70%','危险':'<50%'}},
+    {key:'perf_submit', name:'绩效目标填写完成率', formula:'已提交绩效目标人数/需完成总人数×100%', source:'飞书绩效系统', sourceType:'系统导出',
+     benchmarks:{'优秀':'≥95%','正常':'85%-95%','警示':'70%-85%','危险':'<70%'}}
+  ],
+  '组织结构': [
+    {key:'mgr_ratio', name:'管理人员占比', formula:'架构主管人数/在岗总人数（含星叠）×100%', source:'飞书组织架构', sourceType:'系统导出',
+     benchmarks:{'优秀':'<10%','正常':'10%-15%','警示':'15%-20%','危险':'>20%'}},
+    {key:'span_adapt', name:'管理幅度适配率', formula:'管幅合理岗位数/管理岗位总数×100%（合理3-10人）', source:'经营座舱-管幅及兼岗', sourceType:'经营座舱',
+     benchmarks:{'优秀':'≥85%','正常':'70%-85%','警示':'50%-70%','危险':'<50%'}},
+    {key:'staff_ratio', name:'岗位配比（正式/星叠）', formula:'正式岗位人数（关键输出）/星叠岗位人数（辅助支持）', source:'HR人员台账', sourceType:'人工统计',
+     benchmarks:{'优秀':'1:0.10','正常':'1:0.10~0.20','警示':'1:0.20~0.30','危险':'<1:0.3'}}
+  ],
+  '人才密度': [
+    {key:'level_dist', name:'职级分布', formula:'各职级人数/正式在岗总人数×100%', source:'HR人员档案（校准后职级）', sourceType:'系统导出',
+     benchmarks:{'优秀':'P4-P6≥40%','正常':'P4-P6 25%-40%','警示':'P4-P6 15%-25%','危险':'P4-P6<15%'}},
+    {key:'talent_ratio', name:'核心人才占比', formula:'核心人才人数/正式在岗总人数×100%', source:'核心人才名单（主管+HR确认）', sourceType:'人工统计',
+     benchmarks:{'优秀':'25%-40%','正常':'15%-25%或40%-50%','警示':'10%-15%或50%-60%','危险':'<10%或>60%'}},
+    {key:'talent_train_coverage', name:'核心人才培养覆盖率', formula:'累计进入培养计划的核心人数/核心人才总人数×100%', source:'HR培训台账+主管确认', sourceType:'人工统计',
+     benchmarks:{'优秀':'≥80%','正常':'60%-80%','警示':'40%-60%','危险':'<40%'}},
+    {key:'succession', name:'关键岗位继任率', formula:'有明确继任者的关键岗位数/关键岗位总数×100%', source:'HR继任者台账', sourceType:'人工统计',
+     benchmarks:{'优秀':'≥70%','正常':'50%-70%','警示':'30%-50%','危险':'<30%'}}
+  ],
+  '组织稳定性': [
+    {key:'turnover', name:'整体离职率（季度）', formula:'当期离职人数/[(期初+期末)/2]×100%', source:'HR离职台账', sourceType:'系统导出',
+     benchmarks:{'优秀':'<3%','正常':'3%-8%','警示':'8%-12%','危险':'>12%'}},
+    {key:'key_turnover', name:'核心人才离职率（季度）', formula:'核心人才离职人数/[(期初核心+期末核心)/2]×100%', source:'HR离职台账+核心名单', sourceType:'系统导出',
+     benchmarks:{'优秀':'<1%','正常':'1%-3%','警示':'3%-5%','危险':'>5%'}},
+    {key:'promotion_vs_hire', name:'P4及以上内部晋升vs外部招聘比', formula:'内部晋升至P4及以上人数/外部招募P4及以上人数', source:'HR晋升台账+招聘记录', sourceType:'系统导出',
+     benchmarks:{'优秀':'>2:1','正常':'1:1~2:1','警示':'0.5:1~1:1','危险':'<0.5:1'}},
+    {key:'overtime', name:'加班负荷度', formula:'工作日平均打卡时长/工作日标准工时（9h）×100%', source:'经营座舱-工时及请假出差', sourceType:'经营座舱',
+     benchmarks:{'优秀':'<110%','正常':'110%-125%','警示':'125%-140%','危险':'>140%'}},
+    {key:'overtime_over12', name:'超长工作日占比（>12h）', formula:'大于12h天数/打卡天数×100%', source:'经营座舱-加班总览（>12h）', sourceType:'经营座舱',
+     benchmarks:{'优秀':'<5%','正常':'5%-15%','警示':'15%-25%','危险':'>25%'}}
+  ]
+};
+
+// ============================================================================
+// STATE
+// ============================================================================
+const STORAGE_KEY = 'org_health_v2';
+let currentQuarter = null;
+let currentTab = 'dimensions';
+
+function getData() { try { return JSON.parse(localStorage.getItem(STORAGE_KEY)||'{}'); } catch { return {}; } }
+function saveData(d) { localStorage.setItem(STORAGE_KEY, JSON.stringify(d)); }
+
+// ============================================================================
+// EXPORT / IMPORT / RESET
+// ============================================================================
+function exportData() {
+  const d = getData();
+  const wrapper = {
+    appName: '组织健康度季度诊断报告',
+    version: '2.0',
+    exportedAt: new Date().toISOString(),
+    exportedBy: '',
+    note: '将本文件分享给同事，对方可通过"导入"按钮加载数据。导入前请确认要覆盖当前数据。',
+    data: d
+  };
+  const blob = new Blob([JSON.stringify(wrapper, null, 2)], {type: 'application/json'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  const ts = new Date().toISOString().slice(0,10);
+  a.download = 'org-health-data-' + ts + '.json';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+  document.getElementById('toolbarStatus').textContent = '已导出';
+  document.getElementById('toolbarStatus').style.color = '#10b981';
+  setTimeout(() => { document.getElementById('toolbarStatus').textContent = ''; }, 2000);
+}
+
+function importData() {
+  const input = document.createElement('input');
+  input.type = 'file';
+  input.accept = '.json';
+  input.onchange = function() {
+    const file = this.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = function(e) {
+      try {
+        const wrapper = JSON.parse(e.target.result);
+        let data;
+        // Handle both wrapped and raw format
+        if (wrapper.appName && wrapper.data) {
+          data = wrapper.data;
+        } else {
+          data = wrapper;
+        }
+        if (!data || typeof data !== 'object') throw new Error('无效数据格式');
+        // Basic validation: check if it has quarter keys
+        const keys = Object.keys(data);
+        const hasValidQuarters = keys.some(k => /^\d{4}-Q[1-4]$/.test(k));
+        if (!hasValidQuarters && keys.length > 0) throw new Error('数据中未找到有效的季度记录');
+
+        const d = getData();
+        const newKeys = Object.keys(data).filter(k => /^\d{4}-Q[1-4]$/.test(k));
+        const existingKeys = newKeys.filter(k => d[k]);
+        const confirmMsg = existingKeys.length > 0
+          ? '导入将覆盖以下季度：' + existingKeys.join(', ') + '。确定继续？'
+          : '将导入 ' + newKeys.length + ' 个季度记录。确定继续？';
+
+        if (!confirm(confirmMsg)) return;
+
+        // Merge: only overwrite quarters present in imported data
+        newKeys.forEach(k => { d[k] = data[k]; });
+        saveData(d);
+
+        // Restore currentQuarter if available
+        if (newKeys.length > 0) {
+          currentQuarter = newKeys[newKeys.length - 1];
+        }
+        render();
+        document.getElementById('toolbarStatus').textContent = '已导入 ' + newKeys.length + ' 个季度';
+        document.getElementById('toolbarStatus').style.color = '#10b981';
+        setTimeout(() => { document.getElementById('toolbarStatus').textContent = ''; }, 3000);
+      } catch (err) {
+        alert('导入失败：' + err.message);
+        document.getElementById('toolbarStatus').textContent = '导入失败';
+        document.getElementById('toolbarStatus').style.color = '#ef4444';
+        setTimeout(() => { document.getElementById('toolbarStatus').textContent = ''; }, 3000);
+      }
+    };
+    reader.readAsText(file);
+  };
+  input.click();
+}
+
+function resetData() {
+  if (!confirm('⚠️ 确定要重置所有数据吗？\n\n这将清空所有季度报告、指标数据、待跟进事项和AI分析结果，恢复为空白模板。\n\n此操作不可恢复！')) return;
+  if (!confirm('再次确认：真的要清空所有数据吗？')) return;
+  localStorage.removeItem(STORAGE_KEY);
+  currentQuarter = null;
+  seed();
+  currentQuarter = '2026-Q1';
+  render();
+  document.getElementById('toolbarStatus').textContent = '已重置';
+  document.getElementById('toolbarStatus').style.color = '#f97316';
+  setTimeout(() => { document.getElementById('toolbarStatus').textContent = ''; }, 2000);
+}
+
+function makeDefault(quarter) {
+  const dims = {};
+  DIM_ORDER.forEach(dim => {
+    dims[dim] = {
+      weight: DIM_WEIGHTS[dim],
+      metrics: DEFAULT_METRICS[dim].map(m => ({
+        key:m.key, name:m.name, formula:m.formula, source:m.source, sourceType:m.sourceType, benchmarks: m.benchmarks,
+        currentValue:'', grade:'', judgment:'', note:'', hrNote:'', todos:[]
+      }))
+    };
+  });
+  return { quarter, team:'奇暖项目组', cutoff:'', createdAt:new Date().toISOString(), dimensions:dims };
+}
+
+function getReport() {
+  const d = getData();
+  if (currentQuarter && d[currentQuarter]) return d[currentQuarter];
+  const keys = Object.keys(d).sort().reverse();
+  if (keys.length > 0) { currentQuarter = keys[0]; return d[keys[0]]; }
+  currentQuarter = '2026-Q1';
+  d[currentQuarter] = makeDefault('2026-Q1');
+  saveData(d);
+  return d[currentQuarter];
+}
+
+// ============================================================================
+// SCORING (4-level)
+// ============================================================================
+function computeDimScore(dimKey, metrics) {
+  let g = {'优秀':4,'正常':3,'警示':2,'危险':1};
+  let total=0, cnt=0;
+  metrics.forEach(m => { if (m.grade && g[m.grade]) { total+=g[m.grade]; cnt++; } });
+  const weight = DIM_WEIGHTS[dimKey] || 0;
+  if (cnt===0) return {raw:0,pct:0,graded:0,total:metrics.length,maxScore:weight};
+  const avg = total/cnt;
+  const score = weight>0 ? (avg/4)*weight : 0;
+  return {raw:Math.round(score*10)/10, pct:Math.round(avg/4*100), graded:cnt, total:metrics.length, maxScore:weight};
+}
+
+function computeOverall(rep) {
+  let tt=0, tw=0, tg=0, tm=0;
+  const ds={};
+  DIM_ORDER.forEach(dim => {
+    const r = computeDimScore(dim, rep.dimensions[dim].metrics);
+    ds[dim]=r;
+    if (DIM_WEIGHTS[dim]>0) { tt+=r.raw; tw+=DIM_WEIGHTS[dim]; }
+    tg+=r.graded; tm+=r.total;
+  });
+  return { score: tw>0 ? Math.round(tt/tw*100*10)/10 : 0, graded:tg, total:tm, dimScores:ds };
+}
+
+function gradeColor(g) { return GRADE_COLORS[g]||'#cbd5e1'; }
+
+// ============================================================================
+// RENDER
+// ============================================================================
+function render() {
+  const rep = getReport();
+  const ov = computeOverall(rep);
+  const d = getData();
+
+  // Update team name display
+  document.getElementById('teamNameDisplay').textContent = rep.team;
+  document.getElementById('teamNameInput').value = rep.team;
+
+  // Populate quarter selector
+  const sel = document.getElementById('quarterSelect');
+  sel.innerHTML = Object.keys(d).sort().reverse().map(q =>
+    `<option value="${q}" ${q===currentQuarter?'selected':''}>${q}报告</option>`
+  ).join('');
+
+  document.getElementById('metaPeriod').textContent = rep.quarter;
+  document.getElementById('metaCutoff').textContent = rep.cutoff || '待填写';
+
+  // Judgment summary cards
+  var has = ov.graded>0;
+  var jCounts = { '正常关注':0, '需深挖':0, '需改进':0 };
+  DIM_ORDER.forEach(function(dim) {
+    rep.dimensions[dim].metrics.forEach(function(m) {
+      if (m.judgment && jCounts.hasOwnProperty(m.judgment)) jCounts[m.judgment]++;
+    });
+  });
+  document.getElementById('countNormal').textContent = jCounts['正常关注'];
+  document.getElementById('countDig').textContent = jCounts['需深挖'];
+  document.getElementById('countFix').textContent = jCounts['需改进'];
+
+  document.getElementById('overallVerdict').textContent = has
+    ? '正常关注 ' + jCounts['正常关注'] + ' 项 · 需深挖 ' + jCounts['需深挖'] + ' 项 · 需改进 ' + jCounts['需改进'] + ' 项'
+    : '请在各维度中录入指标数据';
+
+  // Dim badges in overview
+  document.getElementById('dimBadges').innerHTML = DIM_ORDER.map(function(dim) {
+    var dimJ = { '正常关注':0, '需深挖':0, '需改进':0 };
+    rep.dimensions[dim].metrics.forEach(function(m) {
+      if (m.judgment && dimJ.hasOwnProperty(m.judgment)) dimJ[m.judgment]++;
+    });
+    var isOpt = DIM_WEIGHTS[dim]===0;
+    var opt = isOpt ? ' <span style="font-size:10px;color:#94a3b8">(可选)</span>' : '';
+    var parts = [];
+    if (dimJ['需改进']>0) parts.push('<span style="color:#ef4444">需改进'+dimJ['需改进']+'</span>');
+    if (dimJ['需深挖']>0) parts.push('<span style="color:#f97316">需深挖'+dimJ['需深挖']+'</span>');
+    if (dimJ['正常关注']>0) parts.push('<span style="color:#10b981">正常'+dimJ['正常关注']+'</span>');
+    var txt = parts.length>0 ? parts.join(' ') : '待录入';
+    return '<div class="flex items-center gap-1.5 text-xs"><span class="text-xs font-medium">'+dim+'</span> '+txt+opt+'</div>';
+  }).join('');
+
+  renderDims(rep, ov);
+  renderAllTodos(rep);
+  updateBadge(rep);
+  renderAI(rep, ov);
+  updateProjectPresets(rep.team);
+}
+
+function renderDims(rep, ov) {
+  const el = document.getElementById('dimensionsList');
+  let h = '';
+  DIM_ORDER.forEach(dim => {
+    const dd = rep.dimensions[dim];
+    var isOpt = DIM_WEIGHTS[dim]===0;
+    var dimJCounts = { '正常关注':0, '需深挖':0, '需改进':0 };
+    let openTodos = 0;
+    dd.metrics.forEach(function(m) {
+      openTodos += m.todos.filter(function(t){return t.status==='open'}).length;
+      if (m.judgment && dimJCounts.hasOwnProperty(m.judgment)) dimJCounts[m.judgment]++;
+    });
+    var jSum = '';
+    if (dimJCounts['需改进']>0) jSum += '<span style="color:#ef4444;font-weight:600">'+dimJCounts['需改进']+'</span><span class="text-xs text-slate-400 ml-0.5">需改进</span> ';
+    if (dimJCounts['需深挖']>0) jSum += '<span style="color:#f97316;font-weight:600">'+dimJCounts['需深挖']+'</span><span class="text-xs text-slate-400 ml-0.5">需深挖</span> ';
+    if (dimJCounts['正常关注']>0) jSum += '<span style="color:#10b981;font-weight:600">'+dimJCounts['正常关注']+'</span><span class="text-xs text-slate-400 ml-0.5">正常</span>';
+
+    h+='<div class="card mb-4 overflow-hidden '+(isOpt?'opacity-80':'')+'"><div class="p-5">';
+    h+='<div class="flex items-center justify-between mb-3">';
+    h+='<div class="flex items-center gap-2">';
+    h+='<span class="text-lg">'+DIM_ICON[dim]+'</span>';
+    h+='<div>';
+    h+='<div class="flex items-center gap-2"><h3 class="font-semibold text-base">'+dim+'</h3>'+(isOpt?'<span class="text-xs bg-slate-100 text-slate-500 px-2 py-0.5 rounded-full">可选</span>':'')+'</div>';
+    h+='<p class="text-xs text-slate-400 mt-0.5">'+DIM_DESC[dim]+'</p>';
+    h+='</div></div>';
+    h+='<div class="text-right flex items-center gap-2 text-sm">';
+    h+=(jSum?jSum:'<span class="text-xs text-slate-400">待评估</span>');
+    h+='</div></div>';
+
+    if (isOpt) {
+      h+='<div class="mb-4 text-xs text-slate-400 italic">该维度为可选维度，不计入总分</div>';
+    }
+
+    h+=`<div class="space-y-1">`;
+    dd.metrics.forEach((m,i) => {
+      const gCls = m.grade ? `grade-${m.grade}` : 'bg-slate-200';
+      const isDanger = m.grade==='危险';
+      const jBadge = m.judgment==='需改进' ? '<span class="text-xs bg-red-100 text-red-600 px-1.5 py-0.5 rounded-full font-medium">需改进</span>' :
+                     m.judgment==='需深挖' ? '<span class="text-xs bg-orange-100 text-orange-600 px-1.5 py-0.5 rounded-full font-medium">需深挖</span>' :
+                     m.judgment==='正常关注' ? '<span class="text-xs bg-green-100 text-green-600 px-1.5 py-0.5 rounded-full font-medium">正常关注</span>' : '';
+      const jLabel = m.judgment==='需改进' ? '需改进' : m.judgment==='需深挖' ? '需深挖' : m.judgment==='正常关注' ? '正常关注' : '';
+      const jClr = m.judgment==='需改进' ? '#ef4444' : m.judgment==='需深挖' ? '#f97316' : m.judgment==='正常关注' ? '#10b981' : '#94a3b8';
+      const gradeLabel = m.grade ? `<span class="text-xs font-semibold grade-${m.grade} px-2 py-0.5 rounded-full">${m.grade}</span>` : '';
+      h+=`<div class="metric-row ${isDanger?'bg-red-50/50':''}" onclick="openMetric('${dim}',${i})">
+        <span class="score-dot ${gCls} ${isDanger?'alert-pulse':''}" style="min-width:10px"></span>
+        <div class="flex-1 min-w-0">
+          <div class="flex items-center gap-1.5 flex-wrap">
+            <span class="text-sm font-medium truncate">${m.name}</span>
+            <span class="source-tag" onclick="event.stopPropagation()" data-tip="数据来源：${m.source}">${m.sourceType}</span>
+            ${gradeLabel}
+            ${isDanger?'<span class="text-xs text-red-500 font-semibold alert-pulse">⚠</span>':''}
+          </div>
+          <div class="text-xs text-slate-400 mt-0.5">${m.currentValue||'未录入'} ${m.note?`· ${m.note.slice(0,30)}${m.note.length>30?'...':''}`:''}</div>
+        </div>
+        <span class="text-sm font-semibold" style="color:${jClr}">${jLabel||'--'}</span>
+        <button onclick="event.stopPropagation(); deleteMetric('${dim}',${i})" class="text-slate-300 hover:text-red-400 text-sm flex-shrink-0 px-1" title="删除此指标">🗑</button>
+        <svg class="w-4 h-4 text-slate-300 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+      </div>`;
+    });
+
+    h+='<button onclick="event.stopPropagation(); addCustomMetric(\''+dim+'\')" class="w-full text-xs text-blue-500 hover:text-blue-700 py-2 hover:bg-blue-50 rounded-lg transition">+ 添加自定义指标</button>';
+    h+=`</div></div></div>`;
+  });
+  el.innerHTML = h;
+}
+
+function renderAllTodos(rep) {
+  const container = document.getElementById('todosAllContainer');
+  const all = [];
+  DIM_ORDER.forEach(dim => {
+    rep.dimensions[dim].metrics.forEach((m,mi) => {
+      (m.todos||[]).forEach((t,ti) => {
+        all.push({dim, dimIcon:DIM_ICON[dim], metricIdx:mi, metricName:m.name, grade:m.grade, todoIndex:ti, todo:t});
+      });
+    });
+  });
+  if (all.length===0) {
+    container.innerHTML=`<div class="card p-10 text-center text-slate-400"><div class="text-3xl mb-2">📝</div><p class="font-medium">暂无待跟进事项</p><p class="text-sm mt-1">在各维度的指标编辑中添加待办</p></div>`;
+    return;
+  }
+  const open = all.filter(t=>t.todo.status==='open');
+  const done = all.filter(t=>t.todo.status==='done');
+  let h='';
+  if (open.length) {
+    h+=`<h3 class="text-sm font-semibold text-slate-500 mb-3">进行中 (${open.length})</h3>`;
+    h+=open.map(t=>renderTodoCard(t)).join('');
+  }
+  if (done.length) {
+    h+=`<h3 class="text-sm font-semibold text-slate-400 mb-3 mt-5">已完成 (${done.length})</h3>`;
+    h+=done.map(t=>renderTodoCard(t)).join('');
+  }
+  container.innerHTML = h;
+}
+
+function renderTodoCard(t) {
+  const grd = t.grade ? `<span class="text-xs font-semibold grade-text-${t.grade}">${t.grade}</span>` : '';
+  const gClr = t.grade ? gradeColor(t.grade) : '#cbd5e1';
+  const done = t.todo.status==='done';
+  return `<div class="card p-3 mb-2 flex items-start gap-3 ${done?'opacity-50':''}" id="todo-card-${t.dim}-${t.metricIdx}-${t.todoIndex}">
+    <span class="text-sm mt-0.5">${t.dimIcon}</span>
+    <div class="flex-1 min-w-0">
+      <div class="flex items-center gap-2 mb-0.5">
+        <span class="text-xs text-slate-400">${t.dim}</span><span class="text-xs text-slate-300">·</span>
+        <span class="text-xs text-slate-500">${t.metricName}</span><span class="score-dot" style="background:${gClr};width:8px;height:8px"></span>
+      </div>
+      <p class="text-sm ${done?'line-through text-slate-400':'text-slate-700'}" id="todo-text-${t.dim}-${t.metricIdx}-${t.todoIndex}">${esc(t.todo.text)}</p>
+      <input id="todo-edit-${t.dim}-${t.metricIdx}-${t.todoIndex}" value="${esc(t.todo.text)}" class="hidden w-full text-sm p-1.5 rounded border border-blue-300 focus:outline-none focus:border-blue-500 mb-1">
+      <div class="flex items-center gap-2 mt-1">
+        <span class="text-xs text-slate-400">${new Date(t.todo.createdAt).toLocaleDateString('zh-CN')}</span>
+        <button onclick="startEditTodo('${t.dim}',${t.metricIdx},${t.todoIndex})" id="todo-editbtn-${t.dim}-${t.metricIdx}-${t.todoIndex}" class="text-xs text-slate-400 hover:text-blue-500 hover:underline">编辑</button>
+        <button onclick="saveEditTodo('${t.dim}',${t.metricIdx},${t.todoIndex})" id="todo-savebtn-${t.dim}-${t.metricIdx}-${t.todoIndex}" class="hidden text-xs text-green-600 hover:underline">保存</button>
+        <button onclick="cancelEditTodo('${t.dim}',${t.metricIdx},${t.todoIndex})" id="todo-cancelbtn-${t.dim}-${t.metricIdx}-${t.todoIndex}" class="hidden text-xs text-slate-400 hover:underline">取消</button>
+        <button onclick="toggleTodoGlobal('${t.dim}',${t.metricIdx},${t.todoIndex})" class="text-xs ${done?'text-blue-500':'text-green-600'} hover:underline">${done?'重新打开':'标记完成'}</button>
+        <button onclick="deleteTodoGlobal('${t.dim}',${t.metricIdx},${t.todoIndex})" class="text-xs text-red-400 hover:text-red-600 hover:underline">删除</button>
+      </div>
+    </div>
+  </div>`;
+}
+
+function startEditTodo(dim, mi, ti) {
+  document.getElementById(`todo-text-${dim}-${mi}-${ti}`).classList.add('hidden');
+  document.getElementById(`todo-edit-${dim}-${mi}-${ti}`).classList.remove('hidden');
+  document.getElementById(`todo-editbtn-${dim}-${mi}-${ti}`).classList.add('hidden');
+  document.getElementById(`todo-savebtn-${dim}-${mi}-${ti}`).classList.remove('hidden');
+  document.getElementById(`todo-cancelbtn-${dim}-${mi}-${ti}`).classList.remove('hidden');
+  document.getElementById(`todo-edit-${dim}-${mi}-${ti}`).focus();
+}
+function saveEditTodo(dim, mi, ti) {
+  const newText = document.getElementById(`todo-edit-${dim}-${mi}-${ti}`).value.trim();
+  if (!newText) return cancelEditTodo(dim, mi, ti);
+  const d = getData();
+  d[currentQuarter].dimensions[dim].metrics[mi].todos[ti].text = newText;
+  saveData(d);
+  const rep = getReport();
+  renderAllTodos(rep);
+  updateBadge(rep);
+}
+function cancelEditTodo(dim, mi, ti) {
+  const rep = getReport();
+  renderAllTodos(rep);
+  updateBadge(rep);
+}
+function toggleTodoGlobal(dim, mi, ti) {
+  const d = getData();
+  const t = d[currentQuarter].dimensions[dim].metrics[mi].todos[ti];
+  t.status = t.status==='open'?'done':'open';
+  saveData(d);
+  // Partial re-render: todos + badges + dimensions
+  const rep = getReport();
+  renderAllTodos(rep);
+  updateBadge(rep);
+  // Also refresh dim list to update todo counts
+  const ov = computeOverall(rep);
+  renderDims(rep, ov);
+}
+function deleteTodoGlobal(dim, mi, ti) {
+  var d = getData();
+  d[currentQuarter].dimensions[dim].metrics[mi].todos.splice(ti,1);
+  saveData(d);
+  var rep = getReport();
+  renderAllTodos(rep);
+  updateBadge(rep);
+  var ov = computeOverall(rep);
+  renderDims(rep, ov);
+}
+
+function updateBadge(rep) {
+  let cnt=0;
+  DIM_ORDER.forEach(dim=>{rep.dimensions[dim].metrics.forEach(m=>{cnt+=m.todos.filter(t=>t.status==='open').length});});
+  const b = document.getElementById('todoBadge');
+  b.textContent = cnt;
+  if (cnt>0) b.classList.remove('hidden'); else b.classList.add('hidden');
+}
+
+// ============================================================================
+// METRIC MODAL
+// ============================================================================
+let editDim=null, editIdx=null;
+
+function openMetric(dim, idx) {
+  editDim=dim; editIdx=idx;
+  const rep = getReport();
+  const m = rep.dimensions[dim].metrics[idx];
+  document.getElementById('modalTitle').textContent = m.name;
+
+  const gOpts = GRADES.map(g=>{
+    const sel = m.grade===g ? `border-2 border-${g==='优秀'?'green':g==='正常'?'yellow':g==='警示'?'orange':'red'}-500 bg-${g==='优秀'?'green':g==='正常'?'yellow':g==='警示'?'orange':'red'}-50 text-${g==='优秀'?'green':g==='正常'?'yellow':g==='警示'?'orange':'red'}-700` : 'border-slate-200 text-slate-500';
+    return `<button onclick="pickGrade('${g}')" class="flex-1 py-2 rounded-lg border text-sm font-medium transition ${sel}">${g}</button>`;
+  }).join('');
+
+  // Build benchmark hints
+  const bmHints = GRADES.map(g => `${g}：${m.benchmarks[g]||'—'}`).join(' · ');
+
+  document.getElementById('modalBody').innerHTML = `
+    <div class="space-y-4">
+      <div class="bg-slate-50 rounded-xl p-3 space-y-1.5 text-sm">
+        <div class="flex justify-between"><span class="text-slate-400">计算公式</span><span class="text-slate-700 font-medium">${esc(m.formula)}</span></div>
+        <div class="flex justify-between"><span class="text-slate-400">评级标准</span><span class="text-slate-600 text-xs">${esc(bmHints)}</span></div>
+        <div class="flex justify-between"><span class="text-slate-400">数据来源</span><span class="text-slate-700">${esc(m.source)}</span></div>
+        <div class="flex justify-between"><span class="text-slate-400">获取方式</span><span class="text-blue-600">${esc(m.sourceType)}</span></div>
+      </div>
+      <div><label class="block text-sm font-medium text-slate-600 mb-1">当前数值</label>
+      <input id="modalVal" type="text" value="${esc(m.currentValue)}" placeholder="如：16.2% 或 12/74" class="w-full"></div>
+      <div><label class="block text-sm font-medium text-slate-600 mb-1.5">等级评估</label><div class="flex gap-2">${gOpts}</div></div>
+      <div>
+        <label class="block text-sm font-medium text-slate-600 mb-1.5">初步判断</label>
+        <div class="flex gap-2" id="judgmentGroup">
+          <button onclick="pickJudgment('正常关注')" class="flex-1 py-2 rounded-lg border text-sm font-medium transition ${(window._tempJudgment||m.judgment)==='正常关注'?'border-green-500 bg-green-50 text-green-700':'border-slate-200 text-slate-500'}">✅ 目前状态正常可关注</button>
+          <button onclick="pickJudgment('需深挖')" class="flex-1 py-2 rounded-lg border text-sm font-medium transition ${(window._tempJudgment||m.judgment)==='需深挖'?'border-orange-500 bg-orange-50 text-orange-700':'border-slate-200 text-slate-500'}">🔍 可能存在问题需深挖</button>
+          <button onclick="pickJudgment('需改进')" class="flex-1 py-2 rounded-lg border text-sm font-medium transition ${(window._tempJudgment||m.judgment)==='需改进'?'border-red-500 bg-red-50 text-red-700':'border-slate-200 text-slate-500'}">⚠️ 已明确问题点需改进</button>
+        </div>
+      </div>
+      <div><label class="block text-sm font-medium text-slate-600 mb-1">数据解读</label>
+      <textarea id="modalNote" rows="2" placeholder="数值含义、行业对比、隐含信号等" class="w-full">${esc(m.note||'')}</textarea></div>
+      <div><label class="block text-sm font-medium text-slate-600 mb-1">HRBP补充说明</label>
+      <textarea id="modalHRNote" rows="2" placeholder="HRBP视角的额外观察" class="w-full">${esc(m.hrNote||'')}</textarea></div>
+      <div>
+        <div class="flex items-center justify-between mb-2">
+          <label class="text-sm font-medium text-slate-600">待跟进事项</label>
+          <button onclick="addTodoInModal()" class="text-xs text-blue-500 hover:text-blue-700 font-medium">+ 添加</button>
+        </div>
+        <div id="modalTodos" class="space-y-1.5"></div>
+      </div>
+      <div class="flex gap-2 pt-1">
+        <button onclick="closeMetricModal()" class="flex-1 py-2.5 rounded-lg border border-slate-200 text-sm text-slate-500 hover:bg-slate-50">取消</button>
+        <button onclick="saveMetric()" class="flex-1 py-2.5 rounded-lg bg-blue-500 text-white text-sm font-medium hover:bg-blue-600">保存</button>
+      </div>
+    </div>
+  `;
+
+  window._tempGrade = m.grade;
+  window._tempJudgment = window._tempJudgment || m.judgment || '';
+  renderModalTodos();
+  document.getElementById('metricModal').classList.remove('hidden');
+}
+
+function pickGrade(g) {
+  window._tempGrade = g;
+  // Grade buttons are the first .flex.gap-2 div (not #judgmentGroup)
+  var gradeBtns = document.querySelectorAll('#modalBody > div > div:not(#judgmentGroup).flex.gap-2 > button');
+  if (gradeBtns.length === 0) {
+    // Fallback: find the div right after "等级评估" label
+    var labels = document.querySelectorAll('#modalBody label');
+    for (var i = 0; i < labels.length; i++) {
+      if (labels[i].textContent.includes('等级评估')) {
+        gradeBtns = labels[i].nextElementSibling.querySelectorAll('button');
+        break;
+      }
+    }
+  }
+  gradeBtns.forEach(function(btn) {
+    var isSel = btn.textContent.trim() === g;
+    var colors = g==='优秀'?{bg:'bg-green-50',bd:'border-green-500',tx:'text-green-700'}:
+                 g==='正常'?{bg:'bg-yellow-50',bd:'border-yellow-500',tx:'text-yellow-700'}:
+                 g==='警示'?{bg:'bg-orange-50',bd:'border-orange-500',tx:'text-orange-700'}:
+                 {bg:'bg-red-50',bd:'border-red-500',tx:'text-red-700'};
+    btn.className = 'flex-1 py-2 rounded-lg border text-sm font-medium transition ' +
+      (isSel ? 'border-2 ' + colors.bd + ' ' + colors.bg + ' ' + colors.tx : 'border-slate-200 text-slate-500');
+  });
+}
+function pickJudgment(j) {
+  window._tempJudgment = j;
+  document.querySelectorAll('#judgmentGroup button').forEach(function(btn) {
+    var txt = btn.textContent;
+    var jv;
+    if (txt.indexOf('需改进') >= 0) jv = '需改进';
+    else if (txt.indexOf('需深挖') >= 0) jv = '需深挖';
+    else jv = '正常关注';
+    var isSel = jv === j;
+    var colors = jv==='需改进'?{bg:'bg-red-50',bd:'border-red-500',tx:'text-red-700'}:
+                 jv==='需深挖'?{bg:'bg-orange-50',bd:'border-orange-500',tx:'text-orange-700'}:
+                 {bg:'bg-green-50',bd:'border-green-500',tx:'text-green-700'};
+    btn.className = 'flex-1 py-2 rounded-lg border text-sm font-medium transition ' +
+      (isSel ? 'border-2 ' + colors.bd + ' ' + colors.bg + ' ' + colors.tx : 'border-slate-200 text-slate-500');
+  });
+}
+
+function addCustomMetric(dim) {
+  var name = prompt('指标名称（如：AI工具落地效率）：');
+  if (!name || !name.trim()) return;
+  var d = getData();
+  var newM = {
+    key: 'custom_' + Date.now(),
+    name: name.trim(),
+    formula: prompt('计算公式（如：使用AI工具人数/总人数×100%）：') || '',
+    source: prompt('数据来源（如：部门统计）：') || '人工统计',
+    sourceType: '自定义',
+    benchmarks: { '优秀':'待定义', '正常':'待定义', '警示':'待定义', '危险':'待定义' },
+    currentValue: '', grade: '', judgment: '', note: '', hrNote: '', todos: [], custom: true
+  };
+  d[currentQuarter].dimensions[dim].metrics.push(newM);
+  saveData(d);
+  render();
+}
+
+function deleteMetric(dim, idx) {
+  var d = getData();
+  var m = d[currentQuarter].dimensions[dim].metrics[idx];
+  if (!confirm('确定删除指标「' + m.name + '」？此操作不可恢复。')) return;
+  d[currentQuarter].dimensions[dim].metrics.splice(idx, 1);
+  saveData(d);
+  render();
+}
+
+function renderModalTodos() {
+  const rep = getReport();
+  const m = rep.dimensions[editDim].metrics[editIdx];
+  const el = document.getElementById('modalTodos');
+  if (!el) return;
+  const todos = m.todos||[];
+  if (todos.length===0) { el.innerHTML='<p class="text-xs text-slate-400 py-2">暂无，点击"+ 添加"创建</p>'; return; }
+  el.innerHTML = todos.map((t,i)=>`
+    <div class="flex items-center gap-2 bg-slate-50 rounded-lg px-3 py-2 group">
+      <input type="checkbox" ${t.status==='done'?'checked':''} onchange="toggleTodoInModal(${i})" class="w-4 h-4 rounded accent-blue-500">
+      <span class="flex-1 text-sm ${t.status==='done'?'line-through text-slate-400':'text-slate-700'}" id="modal-todo-text-${i}">${esc(t.text)}</span>
+      <input id="modal-todo-edit-${i}" value="${esc(t.text)}" class="hidden flex-1 text-sm p-1 rounded border border-blue-300 focus:outline-none">
+      <button onclick="startEditModalTodo(${i})" id="modal-editbtn-${i}" class="text-slate-300 hover:text-blue-500 text-xs opacity-0 group-hover:opacity-100 transition">编辑</button>
+      <button onclick="saveEditModalTodo(${i})" id="modal-savebtn-${i}" class="hidden text-green-600 hover:underline text-xs">保存</button>
+      <button onclick="cancelEditModalTodo(${i})" id="modal-cancelbtn-${i}" class="hidden text-slate-400 hover:underline text-xs">取消</button>
+      <button onclick="deleteTodoInModal(${i})" class="text-slate-300 hover:text-red-400 text-lg leading-none opacity-0 group-hover:opacity-100 transition">&times;</button>
+    </div>
+  `).join('');
+}
+
+function startEditModalTodo(i) {
+  document.getElementById(`modal-todo-text-${i}`).classList.add('hidden');
+  document.getElementById(`modal-todo-edit-${i}`).classList.remove('hidden');
+  document.getElementById(`modal-editbtn-${i}`).classList.add('hidden');
+  document.getElementById(`modal-savebtn-${i}`).classList.remove('hidden');
+  document.getElementById(`modal-cancelbtn-${i}`).classList.remove('hidden');
+  document.getElementById(`modal-todo-edit-${i}`).focus();
+}
+function saveEditModalTodo(i) {
+  const newText = document.getElementById(`modal-todo-edit-${i}`).value.trim();
+  if (!newText) return cancelEditModalTodo(i);
+  const d = getData();
+  d[currentQuarter].dimensions[editDim].metrics[editIdx].todos[i].text = newText;
+  saveData(d);
+  renderModalTodos();
+  render();
+}
+function cancelEditModalTodo(i) { renderModalTodos(); render(); }
+
+function addTodoInModal() {
+  // Use inline input instead of prompt
+  const d = getData();
+  const m = d[currentQuarter].dimensions[editDim].metrics[editIdx];
+  if (!m.todos) m.todos = [];
+  m.todos.push({text:'新待跟进事项（点击编辑修改）', status:'open', createdAt:new Date().toISOString()});
+  saveData(d);
+  renderModalTodos();
+  render();
+  // Auto-trigger edit on the new item
+  const lastIdx = m.todos.length - 1;
+  setTimeout(() => startEditModalTodo(lastIdx), 100);
+}
+
+function toggleTodoInModal(i) {
+  const d = getData();
+  const t = d[currentQuarter].dimensions[editDim].metrics[editIdx].todos[i];
+  t.status = t.status==='open'?'done':'open';
+  saveData(d);
+  renderModalTodos();
+  render();
+}
+
+function deleteTodoInModal(i) {
+  const d = getData();
+  d[currentQuarter].dimensions[editDim].metrics[editIdx].todos.splice(i,1);
+  saveData(d);
+  renderModalTodos();
+  render();
+}
+
+function saveMetric() {
+  const d = getData();
+  const m = d[currentQuarter].dimensions[editDim].metrics[editIdx];
+  m.currentValue = document.getElementById('modalVal').value.trim();
+  m.grade = window._tempGrade;
+  m.judgment = window._tempJudgment || '';
+  m.note = document.getElementById('modalNote').value.trim();
+  m.hrNote = document.getElementById('modalHRNote').value.trim();
+  saveData(d);
+  closeMetricModal();
+  render();
+}
+
+function closeMetricModal() {
+  document.getElementById('metricModal').classList.add('hidden');
+  editDim=null; editIdx=null; window._tempGrade=null; window._tempJudgment=null;
+}
+
+// ============================================================================
+// AI REPORT — Local rule-based analysis (no API needed, works everywhere)
+// ============================================================================
+
+function renderAI(rep, ov) {
+  const container = document.getElementById('aiReportContent');
+  const has = ov.graded > 0;
+  if (!has) {
+    container.innerHTML = `<div class="p-10 text-center text-slate-400"><div class="text-3xl mb-2">🤖</div><p class="font-medium">请先录入指标数据</p><p class="text-sm mt-1">录入数据后将自动生成报告解读</p></div>`;
+    return;
+  }
+  // Always render local rule-based analysis — works everywhere, no API needed
+  container.innerHTML = buildLocalAnalysisHTML(rep, ov);
+}
+
+function buildLocalAnalysisHTML(rep, ov) {
+  var score = Math.round(ov.score);
+  var html = '<div class="mb-4"><h2 class="text-lg font-bold mb-1">📊 综合评估 · ' + score + ' 分</h2></div>';
+
+  // Cross-dimensional insights
+  var crossInsights = genCrossInsightsV2(rep);
+  if (crossInsights.length > 0) {
+    html += '<div class="rounded-xl p-4 mb-3" style="background:#fffbeb;border:1px solid #fde68a">';
+    html += '<h3 class="font-bold text-sm text-amber-800 mb-2">🔗 跨指标洞察</h3>';
+    crossInsights.forEach(function(ins) {
+      html += '<div class="bg-amber-50 rounded-lg p-3 mb-2"><div class="text-xs font-semibold text-amber-800 mb-1">' + esc(ins.title) + '</div>';
+      html += '<div class="text-sm leading-relaxed" style="color:#78350f">' + esc(ins.insight) + '</div></div>';
+    });
+    html += '</div>';
+  }
+
+  DIM_ORDER.forEach(function(dim) {
+    if (DIM_WEIGHTS[dim]===0) return;
+    var metrics = rep.dimensions[dim].metrics.filter(function(m){ return m.grade; });
+    if (metrics.length===0) return;
+
+    var dimScore = ov.dimScores[dim];
+    var dimBg = dim==='组织结构'?'#fef3c7':dim==='人才密度'?'#f0fdf4':dim==='组织稳定性'?'#fef2f2':'#f1f5f9';
+    var dimBd = dim==='组织结构'?'#fde68a':dim==='人才密度'?'#bbf7d0':dim==='组织稳定性'?'#fecaca':'#cbd5e1';
+
+    html += '<div class="rounded-xl p-4 mb-3" style="background:'+dimBg+';border:1px solid '+dimBd+'">';
+    html += '<h3 class="font-semibold text-sm mb-3">' + DIM_ICON[dim] + ' ' + dim + ' <span class="text-xs font-normal text-slate-500">(' + dimScore.graded + '/' + dimScore.total + '项已评)</span></h3>';
+    metrics.forEach(function(m) {
+      var r = buildReasoning(m);
+      var bgClr = m.grade==='危险'?'#fef2f2':m.grade==='警示'?'#fff7ed':m.grade==='正常'?'#fffbeb':'#f0fdf4';
+      var bdClr = m.grade==='危险'?'#fecaca':m.grade==='警示'?'#fed7aa':m.grade==='正常'?'#fde68a':'#bbf7d0';
+      html += '<div class="rounded-lg p-3 mb-1.5 text-sm" style="background:'+bgClr+';border:1px solid '+bdClr+'">';
+      html += '<span class="text-xs font-semibold grade-'+m.grade+' px-2 py-0.5 rounded-full">'+m.grade+'</span>';
+      html += '<span class="ml-1">'+m.name+': <strong>'+(m.currentValue||'--')+'</strong></span>';
+      if (m.judgment) html += '<span class="ml-2 text-xs">判断：'+m.judgment+'</span>';
+      html += '<div class="text-xs text-slate-500 mt-1">'+r.logic+'</div>';
+      if (r.risk) html += '<div class="text-xs text-red-600 mt-0.5">⚠ '+esc(r.risk)+'</div>';
+      if (r.suggestion) html += '<div class="text-xs text-blue-600 mt-0.5">💡 '+esc(r.suggestion)+'</div>';
+      if (m.hrNote) html += '<div class="text-xs text-purple-600 mt-0.5">💬 '+esc(m.hrNote)+'</div>';
+      html += '</div>';
+    });
+    html += '</div>';
+  });
+
+  html += '<div class="p-3 bg-slate-50 rounded-xl text-xs text-slate-400">📌 以上为本地规则分析。随着季度数据持续沉淀，可进行趋势对比。建议结合管理者访谈交叉验证。</div>';
+  return html;
+}
+
+// generateAIReport removed — AI analysis now uses buildLocalAnalysisHTML directly
+function _deprecated_generateAIReport() {
+  const container = document.getElementById('aiReportContent');
+  const rep = getReport();
+  const ov = computeOverall(rep);
+
+  container.innerHTML = `<div class="p-10 text-center"><div class="text-3xl mb-2">⏳</div><p class="text-sm text-slate-500">AI 正在分析中，请稍候...</p><p class="text-xs text-slate-400 mt-1">若长时间无响应，将自动切换为本地规则分析</p></div>`;
+
+  // Check if API is reachable (only works in WorkBuddy local environment)
+  var canUseAPI = false;
+  try {
+    var ctrl = new AbortController();
+    var timeout = setTimeout(function(){ ctrl.abort(); }, 3000);
+    var resp = await fetch('/v1/chat/completions', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ model: 'deepseek-v4-pro', messages: [{role:'user',content:'ping'}], max_tokens: 1 }),
+      signal: ctrl.signal
+    });
+    clearTimeout(timeout);
+    canUseAPI = resp.ok || resp.status === 400;  // 400 means API is there but bad request
+  } catch(e) {
+    canUseAPI = false;
+  }
+
+  if (!canUseAPI) {
+    // Fallback to local analysis
+    container.innerHTML = '<div class="mb-4 p-3 bg-amber-50 rounded-xl text-xs text-amber-700"><strong>ℹ️ 当前环境无AI接口</strong> · 已自动切换为本地规则分析（离线可用）</div>' + buildLocalAnalysisHTML(rep, ov);
+    return;
+  }
+
+  // Real API call
+  var dataText = '【' + rep.team + ' · ' + rep.quarter + ' · 数据截止' + (rep.cutoff||'待填') + '】\n';
+  DIM_ORDER.forEach(function(dim) {
+    rep.dimensions[dim].metrics.forEach(function(m) {
+      if (m.grade) {
+        dataText += '[' + dim + '] ' + m.name + ': 值=' + (m.currentValue||'--') + ' 评级=' + m.grade + ' 判断=' + (m.judgment||'--');
+        if (m.note) dataText += ' | 解读: ' + m.note;
+        if (m.hrNote) dataText += ' | HRBP补充: ' + m.hrNote;
+        dataText += '\n';
+      }
+    });
+  });
+  var jc = { '正常关注':0, '需深挖':0, '需改进':0 };
+  DIM_ORDER.forEach(function(dim) { rep.dimensions[dim].metrics.forEach(function(m) { if (m.judgment && jc.hasOwnProperty(m.judgment)) jc[m.judgment]++; }); });
+  dataText += '\n判断分布：正常关注' + jc['正常关注'] + '项 · 需深挖' + jc['需深挖'] + '项 · 需改进' + jc['需改进'] + '项\n';
+
+  var userPrompt = '基于以上数据，严格按照Skill模板生成组织健康度诊断报告。\n' +
+    '要求：1-严格遵循五个部分（核心结论→分维度分析→跨指标洞察→行动清单→附录）；2-每个指标逐项分析含结果判定/数据解读/原因分析/建议动作；3-建议按P0/P1/P2分级；4-重点关注「需深挖」「需改进」指标；5-对健康指标解释积极成因；6-语言专业客观适合HRBP与管理讨论；7-输出Markdown格式。';
+
+  try {
+    const resp = await fetch('/v1/chat/completions', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: AI_MODEL,
+        messages: [
+          { role: 'system', content: SKILL_DOC },
+          { role: 'user', content: '数据如下：\n' + dataText + '\n\n' + userPrompt }
+        ],
+        max_tokens: 4096,
+        temperature: 0.3
+      })
+    });
+
+    if (!resp.ok) throw new Error(`API returned ${resp.status}`);
+    const json = await resp.json();
+    const aiText = json.choices?.[0]?.message?.content || '';
+    if (!aiText) throw new Error('Empty AI response');
+
+    // Parse into visual report
+    var parts = aiText.split(/^## /m);
+    var sections = [];
+    for (var i = 0; i < parts.length; i++) {
+      var p = parts[i].trim();
+      if (!p) continue;
+      var lines = p.split('\n');
+      var title = lines[0].replace(/^#+\s*/, '').trim();
+      var body = lines.slice(1).join('\n').trim()
+        .replace(/\*\*(.+?)\*\*/g, '<b>$1</b>')
+        .replace(/\n/g, '<br>');
+      sections.push({title: title, body: body});
+    }
+
+    // Build visual report
+    var html = '<div class="mb-4 p-3 bg-blue-50 rounded-xl text-xs text-blue-700"><b>🤖 AI 组织健康度诊断报告</b> · 基于 ' + ov.graded + '/' + ov.total + ' 项指标数据 + 评估Skill自动生成 · ' + (rep.cutoff||rep.quarter) + '</div>';
+
+    for (var s = 0; s < sections.length; s++) {
+      var sec = sections[s];
+
+      if (sec.title.includes('核心结论')) {
+        html += '<div class="rounded-xl p-4 mb-3" style="background:#f0fdf4;border:1px solid #bbf7d0">';
+        html += '<h2 class="font-bold text-base text-green-800 mb-2">📋 ' + escHtml(sec.title) + '</h2>';
+
+        // Parse subsections
+        var subParts = sec.body.split(/<br>### /);
+        for (var j = 0; j < subParts.length; j++) {
+          var sub = subParts[j];
+          var subTitle = '';
+          var subBody = sub;
+          if (sub.indexOf('<br>') > 0) {
+            var brIdx = sub.indexOf('<br>');
+            subTitle = sub.slice(0, brIdx);
+            subBody = sub.slice(brIdx + 4);
+          }
+          // Parse table rows (| col1 | col2 | ...)
+          var rows = subBody.split(/<br>\|/);
+          var isTable = rows.length >= 3 && rows[0].includes('|') && rows[1].includes('---');
+          if (isTable) {
+            html += '<div class="mb-2"><div class="text-xs font-semibold text-green-700 mb-1">' + escHtml(subTitle).replace(/^#+\s*/, '') + '</div>';
+            html += '<div class="overflow-x-auto"><table class="w-full text-xs border-collapse"><tbody>';
+            for (var r = 2; r < rows.length; r++) {
+              var cells = rows[r].split('|').filter(function(c){return c.trim();});
+              if (cells.length < 2) continue;
+              html += '<tr class="border-b border-green-100">';
+              for (var c = 0; c < cells.length; c++) {
+                var isPriority = cells[0] && (cells[0].includes('P0')||cells[0].includes('P1')||cells[0].includes('P2'));
+                html += '<td class="py-1.5 px-2 ' + (c===0?'font-medium ':'') + (isPriority&&c===0?'text-red-600':'') + '" style="color:' + (c===0?'#374151':'#475569') + '">' + cells[c].trim() + '</td>';
+              }
+              html += '</tr>';
+            }
+            html += '</tbody></table></div></div>';
+          } else {
+            html += '<div class="ml-2 mb-2 text-sm leading-relaxed" style="color:#334155">' + subBody + '</div>';
+          }
+        }
+        html += '</div>';
+      } else if (sec.title.includes('分维度') || sec.title.includes('详细分析')) {
+        // Expandable per-dimension
+        var dimParts = sec.body.split(/<br>###\s*/);
+        html += '<div class="rounded-xl p-4 mb-3" style="background:#eff6ff;border:1px solid #bfdbfe">';
+        html += '<h2 class="font-bold text-base text-blue-800 mb-3">🔍 ' + escHtml(sec.title) + '</h2>';
+
+        for (var d = 0; d < dimParts.length; d++) {
+          var dp = dimParts[d];
+          var dpLines = dp.split('<br>');
+          var dpTitle = dpLines[0];
+          var dpBody = dpLines.slice(1).join('<br>');
+          var dpColor = dpTitle.includes('目标')? {bg:'#f1f5f9',bd:'#cbd5e1',tx:'#475569'}:
+                        dpTitle.includes('组织结构')? {bg:'#fef3c7',bd:'#fde68a',tx:'#92400e'}:
+                        dpTitle.includes('人才密度')? {bg:'#f0fdf4',bd:'#bbf7d0',tx:'#065f46'}:
+                        {bg:'#fef2f2',bd:'#fecaca',tx:'#991b1b'};
+
+          html += '<details class="mb-2" open><summary class="cursor-pointer text-sm font-semibold p-2 rounded-lg" style="background:'+dpColor.bg+';color:'+dpColor.tx+';border:1px solid '+dpColor.bd+'">' + escHtml(dpTitle).replace(/^#+\s*/, '') + '</summary>';
+          html += '<div class="mt-2 ml-2 text-sm leading-relaxed" style="color:#334155">' + dpBody + '</div></details>';
+        }
+        html += '</div>';
+      } else if (sec.title.includes('跨指标') || sec.title.includes('洞察')) {
+        html += '<div class="rounded-xl p-4 mb-3" style="background:#fffbeb;border:1px solid #fde68a">';
+        html += '<h2 class="font-bold text-base text-amber-800 mb-3">🔗 ' + escHtml(sec.title) + '</h2>';
+        // Parse each insight as a subsection
+        var insParts = sec.body.split(/<br>###\s*/);
+        for (var k = 0; k < insParts.length; k++) {
+          var ip = insParts[k];
+          var ipLines = ip.split('<br>');
+          var ipTitle = ipLines[0];
+          var ipBody = ipLines.slice(1).join('<br>');
+          html += '<div class="bg-amber-50 rounded-lg p-3 mb-2"><div class="text-xs font-semibold text-amber-800 mb-1">' + escHtml(ipTitle).replace(/^#+\s*/, '') + '</div>';
+          html += '<div class="text-sm leading-relaxed" style="color:#78350f">' + ipBody + '</div></div>';
+        }
+        html += '</div>';
+      } else if (sec.title.includes('行动')) {
+        html += '<div class="rounded-xl p-4 mb-3" style="background:#fef2f2;border:1px solid #fecaca">';
+        html += '<h2 class="font-bold text-base text-red-800 mb-2">✅ ' + escHtml(sec.title) + '</h2>';
+
+        // Parse P0/P1/P2
+        var actionParts = sec.body.split(/<br>###\s*/);
+        for (var a = 0; a < actionParts.length; a++) {
+          var ap = actionParts[a];
+          var apTitle = ap.split('<br>')[0];
+          var apBody = ap.split('<br>').slice(1).join('<br>');
+          var pColor = apTitle.includes('P0')? {bg:'#fef2f2',bd:'#fecaca',label:'🔴 P0 立即处理'}:
+                       apTitle.includes('P1')? {bg:'#fff7ed',bd:'#fed7aa',label:'🟡 P1 本季度推进'}:
+                       {bg:'#eff6ff',bd:'#bfdbfe',label:'🔵 P2 中长期建设'};
+          html += '<div class="rounded-lg p-3 mb-1.5" style="background:'+pColor.bg+';border:1px solid '+pColor.bd+'">';
+          html += '<div class="text-xs font-semibold mb-1">' + pColor.label + '</div>';
+          html += '<div class="text-sm leading-relaxed" style="color:#334155">' + apBody + '</div>';
+          html += '</div>';
+        }
+        html += '</div>';
+      } else if (sec.title.includes('附录')) {
+        html += '<div class="rounded-xl p-4 mb-3" style="background:#f8fafc;border:1px solid #e2e8f0">';
+        html += '<h2 class="font-bold text-base text-slate-600 mb-2">📎 ' + escHtml(sec.title) + '</h2>';
+        html += '<div class="text-sm leading-relaxed" style="color:#475569">' + sec.body + '</div>';
+        html += '</div>';
+      } else {
+        // Generic section
+        html += '<div class="rounded-xl p-4 mb-3" style="background:#f8fafc;border:1px solid #e2e8f0">';
+        html += '<h2 class="font-bold text-base text-slate-700 mb-2">' + escHtml(sec.title) + '</h2>';
+        html += '<div class="text-sm leading-relaxed" style="color:#334155">' + sec.body + '</div>';
+        html += '</div>';
+      }
+    }
+
+    html += '<div class="p-3 bg-slate-50 rounded-xl text-xs text-slate-400">📌 以上为 AI 初步分析。随着季度数据持续沉淀，可进行趋势对比。建议结合管理者访谈交叉验证。</div>';
+    container.innerHTML = html;
+  } catch (e) {
+    console.error('AI generation failed:', e);
+    var rep2 = getReport();
+    var ov2 = computeOverall(rep2);
+    document.getElementById('aiReportContent').innerHTML = '<div class="mb-4 p-3 bg-amber-50 rounded-xl text-xs text-amber-700"><strong>⚠️ AI 接口超时或异常</strong> · 已自动切换为本地规则分析</div>' + buildLocalAnalysisHTML(rep2, ov2);
+  }
+}
+
+function buildReasoning(m) {
+  const val = m.currentValue||'';
+  const grade = m.grade;
+
+  // Extract numeric percentage from value
+  const numMatch = val.match(/([\d.]+)/);
+  const num = numMatch ? parseFloat(numMatch[1]) : null;
+
+  const templates = {
+    '管理人员占比': {
+      calc: num!==null
+        ? `架构主管12人 / 在岗总人数74人(含星叠) = ${num}%`
+        : `架构主管人数 / 在岗总人数(含星叠)`,
+      logic: num!==null
+        ? `${num}% ${num>=15?'超过15%正常上限':'在正常范围'}，${num>=15?'管理层偏厚，需关注汇报层级':'组织结构扁平化程度合理'}`
+        : '根据录入数值对照评级标准判定',
+      risk: num!==null&&num>=15 ? '管理层偏厚可能导致决策链路长、沟通成本上升、资源分散' : '',
+      suggestion: num!==null&&num>=15 ? '审视管理层级，评估是否存在可按能合并的岗位；关注汇报线复杂度，尝试扁平化调整' : '继续保持当前管理结构，定期审视'
+    },
+    '管理幅度适配率': {
+      calc: `管幅在3-10人合理范围的岗位数 / 管理岗位总数 × 100%`,
+      logic: num!==null
+        ? `适配率${num}%，${num>=85?'≥85%优秀':num>=70?'在70%-85%正常区间':num>=50?'在50%-70%警示区间':'<50%处于危险区间'}`
+        : '根据录入数值对照评级标准判定',
+      risk: num!==null&&num<70 ? '管理幅度失衡：过宽则管理者精力分散、过窄则架构碎片化' : '',
+      suggestion: num!==null&&num<70 ? '评估每个管理者的实际精力分配；幅度>10人的考虑拆分或增设副职，幅度<3人的评估是否可合并管理线' : ''
+    },
+    '岗位配比（正式/星叠）': {
+      calc: `正式岗位人数67 / 星叠7 = 约1:0.10`,
+      logic: `正式:星叠≈9:1(1:0.11)，属于1:0.10的合理区间`,
+      risk: '',
+      suggestion: '成熟期项目可适当增加星叠人力占比，降低核心人力成本'
+    },
+    '核心人才占比': {
+      calc: num!==null ? `核心人才17人 / 正式在岗67人 = ${num}%` : `核心人才人数 / 正式在岗总人数`,
+      logic: num!==null
+        ? `${num}% ${num>=25&&num<=40?'在25%-40%优秀区间':num>=15&&num<=50?'在正常/接受范围内':'偏离合理区间，需关注'}`
+        : '根据录入数值对照评级标准判定',
+      risk: num!==null&&(num<15||num>50) ? (num<10?'核心梯队薄弱，关键业务依赖少数人':'资源过度集中，单点风险大') : '',
+      suggestion: num!==null&&(num<15||num>50) ? '平衡核心人才分布，建立梯队培养机制，确保各部门都有核心贡献者' : '核心人才分布健康，继续保持'
+    },
+    '核心人才培养覆盖率': {
+      calc: num!==null ? `累计进入培养计划14人 / 核心人才17人 = ${num}%` : `进入培养计划的核心人数 / 核心人才总数`,
+      logic: num!==null
+        ? `覆盖率${num}%，${num>=80?'≥80%优秀':num>=60?'在60%-80%正常区间':num>=40?'在40%-60%警示区间':'<40%培养严重不足'}`
+        : '根据录入数值对照评级标准判定',
+      risk: num!==null&&num<60 ? '培养覆盖不足，核心人才可能被业务任务绑架，无暇参与能力提升' : '',
+      suggestion: num!==null&&num<60 ? '确保核心人才有固定学习时间，将培养完成情况纳入主管考核' : '持续跟踪培养计划执行情况'
+    },
+    '关键岗位继任率': {
+      calc: num!==null ? `有明确继任者8个岗位 / 9个关键岗位 = ${num}%` : `有继任者的关键岗位数 / 关键岗位总数`,
+      logic: num!==null
+        ? `继任率${num}%，${num>=70?'≥70%优秀':num>=50?'在50%-70%正常区间':num>=30?'在30%-50%警示区间':'<30%高危'}`
+        : '根据录入数值对照评级标准判定',
+      risk: num!==null&&num<50 ? '关键岗位人员一旦离职，业务可能中断。继任者储备不足是组织长期风险' : '',
+      suggestion: num!==null&&num<50 ? '定期盘点关键岗位梯队，对无继任者的岗位制定1-2年培养计划' : '继续完善继任梯队，关注培养中的继任者成长进度'
+    },
+    '整体离职率（季度）': {
+      calc: `当期离职人数 / [(期初+期末)/2] × 100%（按季度计算）`,
+      logic: num!==null
+        ? `季度离职率约${num}%，${num<3?'<3%优秀':num<8?'在3%-8%正常区间':num<12?'在8%-12%警示区间':'>12%处于危险区间'}`
+        : '根据录入数值对照评级标准判定',
+      risk: num!==null&&num>=8 ? '离职率偏高，需区分主动/被动离职，关注离职原因分布' : '',
+      suggestion: num!==null&&num>=8 ? '开展离职访谈，识别共性问题。若是主动离职占比高，重点排查工作强度、薪酬竞争力和团队氛围' : '整体人员留存健康，继续保持'
+    },
+    '核心人才离职率（季度）': {
+      calc: `核心人才离职人数 / [(期初核心+期末核心)/2] × 100%（按季度计算）`,
+      logic: num!==null
+        ? `季度核心人才离职率${num}%，${num<1?'<1%优秀':num<3?'在1%-3%正常区间':num<5?'在3%-5%警示区间':'>5%高危'}`
+        : '根据录入数值对照评级标准判定',
+      risk: num!==null&&num>=3 ? '核心人才离职影响远大于普通员工，可能影响核心业务连续性' : '',
+      suggestion: num!==null&&num>=3 ? '每位核心人才离职需第一时间深度访谈，了解真实原因并评估补救措施' : '核心人才留存稳定，保持关注'
+    },
+    'P4及以上内部晋升vs外部招聘比': {
+      calc: `内部晋升至P4及以上人数 / 外部招募P4及以上人数`,
+      logic: `比例约${val||'—'}，${val.includes('7:3')||val.includes('2:1')?'>2:1优秀':val.includes('1:1')?'在正常区间':'需关注内外部人才使用平衡'}`,
+      risk: grade==='警示'||grade==='危险' ? '外部依赖过高可能挤压内部晋升空间，影响员工发展信心和留存意愿' : '',
+      suggestion: grade==='警示'||grade==='危险' ? '审视晋升机制公平性，增加内部晋升机会；关注晋升后人员留存情况' : '内部发展通道健康，继续保持'
+    },
+    '加班负荷度': {
+      calc: `工作日平均打卡时长 / 9h（标准工时）× 100%`,
+      logic: num!==null
+        ? `负荷度${num}%，${num<110?'<110%优秀':num<125?'在110%-125%正常区间':num<140?'在125%-140%警示区间':'>140%高危'}`
+        : '根据录入数值对照评级标准判定',
+      risk: num!==null&&num>=125 ? '加班负荷偏高可能导致员工疲劳、创造力下降和离职风险上升' : '',
+      suggestion: num!==null&&num>=125 ? '分析加班原因（任务过载/流程冗余/加班文化），分部门定位高负荷团队并针对性改善' : '加班节奏合理，保持关注'
+    },
+    '超长工作日占比（>12h）': {
+      calc: `大于12h的天数 / 打卡天数 × 100%`,
+      logic: num!==null
+        ? `占比${num}%，${num<5?'<5%优秀':num<15?'在5%-15%正常区间':num<25?'在15%-25%警示区间':'>25%高危'}`
+        : '根据录入数值对照评级标准判定',
+      risk: num!==null&&num>=15 ? '超长加班天数较多，存在员工健康风险和长期倦怠风险' : '',
+      suggestion: num!==null&&num>=15 ? '识别高频超长加班团队，区分项目紧急期和常态化加班；对常态化超长加班制定改善方案' : '超长加班情况可控，保持关注'
+    }
+  };
+
+  return templates[m.name] || {
+    calc: `${m.formula}`,
+    logic: grade ? `根据当前值 ${val||'—'} 对照评级标准判定为「${grade}」` : '待评级',
+    risk: grade==='危险'||grade==='警示' ? `该指标处于「${grade}」区间，建议尽快开展原因分析` : '',
+    suggestion: '结合业务背景和访谈深入分析'
+  };
+}
+
+function genCrossInsightsV2(rep) {
+  const insights = [];
+  const dd = rep.dimensions;
+
+  // Helper to find metric
+  const g = (dim, key) => (dd[dim]?.metrics||[]).find(m=>m.key===key);
+
+  // 加班 + 离职
+  const ot = g('组织稳定性','overtime');
+  const to = g('组织稳定性','turnover');
+  if (ot&&to && ['警示','危险'].includes(ot.grade) && ['警示','危险'].includes(to.grade)) {
+    insights.push({
+      title: '加班负荷过高可能正在推高离职率',
+      metricsList: ['加班负荷度', '整体离职率'],
+      insight: `加班负荷度 ${ot.currentValue}（${ot.grade}）与整体离职率 ${to.currentValue}（${to.grade}）同时处于高风险区间，两者可能存在因果关系。建议分部门交叉分析加班分布与离职分布的重合度，识别"加班重灾区+高离职区"的重点团队。`
+    });
+  }
+
+  // 管理幅度 + 继任
+  const span = g('组织结构','span_adapt');
+  const succ = g('人才密度','succession');
+  if (span&&succ && ['警示','危险'].includes(span.grade) && ['警示','危险'].includes(succ.grade)) {
+    insights.push({
+      title: '管理幅度失衡正在影响继任梯队建设',
+      metricsList: ['管理幅度适配率', '关键岗位继任率'],
+      insight: `管理幅度适配率仅 ${span.currentValue}（${span.grade}），意味着多数管理者的精力被分散，无法有效辅导下属成长。这与关键岗位继任率 ${succ.currentValue}（${succ.grade}）形成印证——管理者顾不上培养人，梯队自然薄弱。建议优先解决管幅问题，再推进继任培养计划。`
+    });
+  }
+
+  // 晋升 + 核心离职
+  const prom = g('组织稳定性','promotion_vs_hire');
+  const kt = g('组织稳定性','key_turnover');
+  if (prom&&kt && ['警示','危险'].includes(prom.grade) && ['警示','危险'].includes(kt.grade)) {
+    insights.push({
+      title: '晋升通道不畅与核心人才流失可能互为因果',
+      metricsList: ['P4及以上内部晋升vs外部招聘比', '核心人才离职率'],
+      insight: `内部晋升与外部招聘比 ${prom.currentValue}（${prom.grade}），外部依赖偏高。同时核心人才离职率 ${kt.currentValue}（${kt.grade}），两条线同时预警。外部招募比例过高可能让内部人才感到发展受限。建议审视晋升机制公平性，了解离职核心人才的"真实离职原因"是否与晋升有关。`
+    });
+  }
+
+  // 管幅 + 管理人员占比
+  const mgr = g('组织结构','mgr_ratio');
+  if (span&&mgr && ['警示','危险'].includes(span.grade) && ['警示','危险'].includes(mgr.grade)) {
+    insights.push({
+      title: '管理层偏厚且管幅失衡 — 组织结构需系统性审视',
+      metricsList: ['管理人员占比', '管理幅度适配率'],
+      insight: `管理人员占比 ${mgr.currentValue}（${mgr.grade}）偏高，同时管幅适配率 ${span.currentValue}（${span.grade}）偏低。这说明不单是"管理者太多"，更是"管理分工不合理"——有人在管1-2人，有人管10+人。建议做一次全面的组织架构审视，重新评估岗位设置和管理线分配。`
+    });
+  }
+
+  return insights;
+}
+
+// ============================================================================
+// QUARTER MANAGEMENT
+// ============================================================================
+function switchQuarter() {
+  const q = document.getElementById('quarterSelect').value;
+  currentQuarter = q;
+  const d = getData();
+  if (!d[q]) { d[q] = makeDefault(q); saveData(d); }
+  render();
+}
+
+function addNewQuarter() {
+  const now = new Date();
+  const yr = now.getFullYear();
+  const mo = now.getMonth();
+  const qNum = Math.floor(mo/3)+1;
+  const def = `${yr}-Q${qNum}`;
+
+  const q = prompt('请输入季度（如：2026-Q2）：', def);
+  if (!q||!q.match(/^\d{4}-Q[1-4]$/)) { alert('请输入正确的季度格式，如 2026-Q2'); return; }
+
+  const d = getData();
+  if (d[q] && !confirm(`${q} 已存在，是否覆盖？`)) return;
+  d[q] = makeDefault(q);
+  d[q].cutoff = prompt('数据截止日期（如 2026-03-31）：', `${q.slice(0,4)}-${String(parseInt(q.slice(-1))*3).padStart(2,'0')}-30`) || '';
+  currentQuarter = q;
+  saveData(d);
+  render();
+}
+
+// ============================================================================
+// TAB SWITCHING
+// ============================================================================
+function switchTab(tab) {
+  currentTab = tab;
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.toggle('active', b.dataset.tab===tab));
+  document.getElementById('tab-dimensions').classList.toggle('hidden', tab!=='dimensions');
+  document.getElementById('tab-todos').classList.toggle('hidden', tab!=='todos');
+  document.getElementById('tab-ai').classList.toggle('hidden', tab!=='ai');
+  if (tab==='ai') renderAI(getReport(), computeOverall(getReport()));
+}
+
+function esc(s) { if (!s) return ''; return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+function escHtml(s) { return esc(s); }
+
+// ============================================================================
+// TEAM NAME / PROJECT MANAGEMENT
+// ============================================================================
+function startEditTeamName() {
+  document.getElementById('teamNameDisplay').classList.add('hidden');
+  document.getElementById('teamNameInput').classList.remove('hidden');
+  document.getElementById('teamNameInput').focus();
+  document.getElementById('teamNameInput').select();
+}
+
+function saveTeamName() {
+  var input = document.getElementById('teamNameInput');
+  var newName = input.value.trim();
+  if (!newName) {
+    input.value = document.getElementById('teamNameDisplay').textContent;
+    cancelEditTeamName();
+    return;
+  }
+  var d = getData();
+  var rep = d[currentQuarter];
+  rep.team = newName;
+  // Also update all quarters with same old name (if they match)
+  var oldTeam = document.getElementById('teamNameDisplay').textContent;
+  Object.keys(d).forEach(function(q) {
+    if (d[q].team === oldTeam) d[q].team = newName;
+  });
+  saveData(d);
+  cancelEditTeamName();
+  // Update preset dropdown
+  updateProjectPresets(newName);
+  // Update display and input
+  document.getElementById('teamNameDisplay').textContent = newName;
+  document.getElementById('teamNameInput').value = newName;
+  render();
+}
+
+function cancelEditTeamName() {
+  document.getElementById('teamNameDisplay').classList.remove('hidden');
+  document.getElementById('teamNameInput').classList.add('hidden');
+}
+
+function switchProject() {
+  var sel = document.getElementById('projectPreset');
+  var newName = sel.value;
+  if (!newName) return;
+  // Don't change if same as current
+  var currentTeam = document.getElementById('teamNameDisplay').textContent;
+  if (newName === currentTeam) return;
+
+  if (!confirm('切换到项目「' + newName + '」？\n当前项目的数据不会丢失，可以通过下拉菜单随时切回。')) return;
+
+  var d = getData();
+  var rep = d[currentQuarter];
+  rep.team = newName;
+  saveData(d);
+  document.getElementById('teamNameDisplay').textContent = newName;
+  document.getElementById('teamNameInput').value = newName;
+  sel.value = '';
+  render();
+}
+
+function updateProjectPresets(currentName) {
+  var d = getData();
+  var sel = document.getElementById('projectPreset');
+  // Collect all unique team names from all quarters
+  var teams = {};
+  Object.keys(d).forEach(function(q) {
+    var t = d[q].team;
+    if (t && t !== currentName) teams[t] = true;
+  });
+  var teamList = Object.keys(teams).sort();
+  // Build options: "切换到XX" for each
+  var html = '<option value="">+ 切换项目模板</option>';
+  teamList.forEach(function(t) {
+    html += '<option value="' + esc(t) + '">' + esc(t) + '</option>';
+  });
+  sel.innerHTML = html;
+}
+function seed() {
+  const d = getData();
+  if (!d['2026-Q1']) {
+    const r = makeDefault('2026-Q1');
+    r.cutoff = '2026-03-31';
+
+    // 目标对齐（optional）
+    r.dimensions['目标对齐'].metrics[0].currentValue='100%'; r.dimensions['目标对齐'].metrics[0].grade='优秀'; r.dimensions['目标对齐'].metrics[0].note='目标均拆解至岗位';
+    r.dimensions['目标对齐'].metrics[1].currentValue='95%'; r.dimensions['目标对齐'].metrics[1].grade='优秀'; r.dimensions['目标对齐'].metrics[1].note='除少数新人外均已提交';
+
+    // 组织结构
+    r.dimensions['组织结构'].metrics[0].currentValue='16.2%'; r.dimensions['组织结构'].metrics[0].grade='警示'; r.dimensions['组织结构'].metrics[0].judgment='需深挖'; r.dimensions['组织结构'].metrics[0].note='12位架构主管占73人的16.2%，其中4位管理1-2人';
+    r.dimensions['组织结构'].metrics[1].currentValue='41%（5/12）'; r.dimensions['组织结构'].metrics[1].grade='危险'; r.dimensions['组织结构'].metrics[1].judgment='需改进'; r.dimensions['组织结构'].metrics[1].note='12个管理岗位中5个在合理范围（3-10人）';
+    r.dimensions['组织结构'].metrics[2].currentValue='1:0.10（67:7）'; r.dimensions['组织结构'].metrics[2].grade='优秀'; r.dimensions['组织结构'].metrics[2].judgment='正常关注'; r.dimensions['组织结构'].metrics[2].note='成熟项目，建议后续招聘以星叠为主';
+
+    // 人才密度
+    r.dimensions['人才密度'].metrics[0].currentValue='P4-P6约40%'; r.dimensions['人才密度'].metrics[0].grade='优秀'; r.dimensions['人才密度'].metrics[0].judgment='正常关注'; r.dimensions['人才密度'].metrics[0].note='职级集中在P4-P5段，P6及以上较少';
+    r.dimensions['人才密度'].metrics[1].currentValue='25.4%（17/67）'; r.dimensions['人才密度'].metrics[1].grade='优秀'; r.dimensions['人才密度'].metrics[1].judgment='正常关注'; r.dimensions['人才密度'].metrics[1].note='各部门核心贡献者为主';
+    r.dimensions['人才密度'].metrics[2].currentValue='82.4%（14/17）'; r.dimensions['人才密度'].metrics[2].grade='优秀'; r.dimensions['人才密度'].metrics[2].judgment='正常关注'; r.dimensions['人才密度'].metrics[2].note='主管均完成培训，骨干培养进行中';
+    r.dimensions['人才密度'].metrics[3].currentValue='88.9%（8/9）'; r.dimensions['人才密度'].metrics[3].grade='优秀'; r.dimensions['人才密度'].metrics[3].judgment='正常关注'; r.dimensions['人才密度'].metrics[3].note='除PM组外均有继任人选';
+
+    // 组织稳定性
+    r.dimensions['组织稳定性'].metrics[0].currentValue='约4%'; r.dimensions['组织稳定性'].metrics[0].grade='正常'; r.dimensions['组织稳定性'].metrics[0].judgment='正常关注'; r.dimensions['组织稳定性'].metrics[0].note='主动离职为主，核心人才稳定';
+    r.dimensions['组织稳定性'].metrics[1].currentValue='0'; r.dimensions['组织稳定性'].metrics[1].grade='优秀'; r.dimensions['组织稳定性'].metrics[1].judgment='正常关注'; r.dimensions['组织稳定性'].metrics[1].note='核心人才无离职风险';
+    r.dimensions['组织稳定性'].metrics[2].currentValue='约7:3'; r.dimensions['组织稳定性'].metrics[2].grade='正常'; r.dimensions['组织稳定性'].metrics[2].judgment='需深挖'; r.dimensions['组织稳定性'].metrics[2].note='比例在合理范围，20%晋升人员后续离职需关注';
+    r.dimensions['组织稳定性'].metrics[3].currentValue='约115%'; r.dimensions['组织稳定性'].metrics[3].grade='正常'; r.dimensions['组织稳定性'].metrics[3].judgment='正常关注'; r.dimensions['组织稳定性'].metrics[3].note='工作日平均打卡超9h，有一定负荷';
+    r.dimensions['组织稳定性'].metrics[4].currentValue='约15%'; r.dimensions['组织稳定性'].metrics[4].grade='警示'; r.dimensions['组织稳定性'].metrics[4].judgment='需深挖'; r.dimensions['组织稳定性'].metrics[4].note='Q1因春节版本赶工，2月超长加班较多';
+
+    // Todos
+    r.dimensions['组织结构'].metrics[1].todos=[
+      {text:'梳理管幅过窄的4个岗位，评估是否合并管理线',status:'open',createdAt:new Date('2026-03-31').toISOString()},
+      {text:'关注管理≥10人的3位主管精力状态',status:'open',createdAt:new Date('2026-03-31').toISOString()}
+    ];
+    r.dimensions['人才密度'].metrics[3].todos=[
+      {text:'推进PM组继任者培养计划，明确培养路径',status:'open',createdAt:new Date('2026-03-31').toISOString()}
+    ];
+    r.dimensions['组织稳定性'].metrics[4].todos=[
+      {text:'分析Q1超长加班具体分布，识别常态化和项目制加班',status:'open',createdAt:new Date('2026-03-31').toISOString()}
+    ];
+
+    d['2026-Q1'] = r;
+    saveData(d);
+  }
+}
+
+seed();
+currentQuarter = '2026-Q1';
+render();
+</script>
+</body>
+</html>
