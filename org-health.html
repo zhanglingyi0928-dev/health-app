@@ -22,6 +22,10 @@
   .tab-btn:not(.active) { color: var(--text-muted); }
   .tab-btn:not(.active):hover { background: #f1f5f9; }
   .modal-backdrop { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.4); z-index: 100; display: flex; align-items: center; justify-content: center; }
+
+  /* Fallback：如果 Tailwind CDN 未加载，仍需要正确隐藏模态层/标签页 */
+  .hidden { display: none !important; }
+
   .modal-content { background: white; border-radius: 16px; width: 92%; max-width: 560px; max-height: 85vh; overflow-y: auto; padding: 28px; box-shadow: 0 20px 60px rgba(0,0,0,0.15); }
   .metric-row { display: flex; align-items: center; gap: 12px; padding: 10px 14px; border-radius: 12px; transition: background 0.15s; cursor: pointer; }
   .metric-row:hover { background: #f8fafc; }
@@ -84,6 +88,10 @@
       <button onclick="resetData()" class="text-xs text-red-400 bg-white border border-red-200 px-3 py-1.5 rounded-lg hover:bg-red-50 hover:border-red-300 transition flex items-center gap-1" title="清空所有数据，重置为空白模板">
         <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6M1 7h22M8 7V4a1 1 0 011-1h6a1 1 0 011 1v3"/></svg>
         重置
+      </button>
+      <button onclick="restoreSeedData()" class="text-xs text-orange-600 bg-white border border-orange-200 px-3 py-1.5 rounded-lg hover:bg-orange-50 hover:border-orange-300 transition flex items-center gap-1" title="恢复模板示例数据（用于演示如何录入与生成解读）">
+        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4h18v16H3V4z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 8h10M7 12h10M7 16h6"/></svg>
+        恢复示例
       </button>
     </div>
     <div class="text-xs text-slate-400" id="toolbarStatus"></div>
@@ -319,6 +327,18 @@ function resetData() {
   document.getElementById('toolbarStatus').textContent = '已重置';
   document.getElementById('toolbarStatus').style.color = '#f97316';
   setTimeout(() => { document.getElementById('toolbarStatus').textContent = ''; }, 2000);
+}
+
+function restoreSeedData() {
+  if (!confirm('⚠️ 将恢复模板示例数据（会覆盖当前本地已录入数据）。\n\n如果你想保留现有数据，请先用「导出」保存。')) return;
+  localStorage.removeItem(STORAGE_KEY);
+  currentQuarter = null;
+  seed();
+  currentQuarter = '2026-Q1';
+  render();
+  document.getElementById('toolbarStatus').textContent = '已恢复示例数据';
+  document.getElementById('toolbarStatus').style.color = '#f59e0b';
+  setTimeout(() => { document.getElementById('toolbarStatus').textContent = ''; }, 2500);
 }
 
 function makeDefault(quarter) {
@@ -890,7 +910,7 @@ function buildLocalAnalysisHTML(rep, ov) {
 }
 
 // generateAIReport removed — AI analysis now uses buildLocalAnalysisHTML directly
-function _deprecated_generateAIReport() {
+async function _deprecated_generateAIReport() {
   const container = document.getElementById('aiReportContent');
   const rep = getReport();
   const ov = computeOverall(rep);

@@ -729,6 +729,14 @@
           <div class="row-content"><div class="row-title">导出数据备份</div><div class="row-subtitle">下载 JSON 文件到本地</div></div>
           <span class="row-arrow">›</span>
         </div>
+        <div class="settings-row" onclick="clearPersonalSettings()">
+          <div class="row-icon ic-blue">🧹</div>
+          <div class="row-content">
+            <div class="row-title">清空个人设置（保留记录）</div>
+            <div class="row-subtitle">脱敏后分享更安心</div>
+          </div>
+          <span class="row-arrow">›</span>
+        </div>
         <div class="settings-row" onclick="showToast('隐私设置开发中',1500)">
           <div class="row-icon ic-gray">🔒</div>
           <div class="row-content"><div class="row-title">隐私与数据</div></div>
@@ -2010,6 +2018,32 @@ function exportData() {
   a.click();
   URL.revokeObjectURL(url);
   showToast(`已导出 ${count} 天数据`, 2000);
+}
+
+// ─── 脱敏分享：清空个人设置但保留记录 ─────────────────────────────
+function clearPersonalSettings() {
+  const raw = localStorage.getItem('health_diary_data');
+  if (!raw) { showToast('暂无数据', 2000); return; }
+
+  if (!confirm('确定要清空个人设置并脱敏后再导出吗？\n将保留饮食/运动/睡眠/体重记录，仅清空姓名、病史/禁忌、目标等个人信息。')) return;
+
+  const existing = JSON.parse(raw);
+
+  // 基于默认模板重置 user（保留 logs / streak 等统计可继续展示）
+  const def = getDefaultData();
+  existing.user = def.user;
+
+  // 保留当前已录入的 streak/lastCheckin（可选）；更保险：只重置 user
+  if (!existing.logs) existing.logs = {};
+
+  localStorage.setItem('health_diary_data', JSON.stringify(existing));
+  appData = existing;
+
+  refreshDashboard();
+  refreshAchievements();
+  renderSettings();
+
+  showToast('已脱敏：个人设置已清空（保留记录）', 2500);
 }
 
 // Init
